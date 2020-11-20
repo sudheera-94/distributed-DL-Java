@@ -1,0 +1,2 @@
+to build a jar :-
+    mvn package -DskipTests

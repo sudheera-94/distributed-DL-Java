@@ -100,11 +100,7 @@ public class TrainSparkMnist {
             .collectTrainingStats(false)
             .batchSizePerWorker(minibatch)              // Minibatch size for each worker
             .averagingFrequency(avgFreq)                // Number of training iterations per exploitation
-            ///
-            ///
-            ///
-            ///
-                .build();
+            .build();
 
 
         MultiLayerNetwork net = getNetwork();
