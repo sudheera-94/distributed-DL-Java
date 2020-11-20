@@ -1,2 +1,21 @@
 to build a jar :-
     mvn package -DskipTests
+
+Cresting a EMR spark cluster :-
+    https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-spark-launch.html
+
+    cheapest EC2 - m4.large
+
+    video :- https://www.youtube.com/watch?v=hSWkKk36TS8&ab_channel=LevelUp (6:20 onwards)
+    upload jar to S3
+    aws s3 cp <s3 path to jar> .
+
+spark submit command :-
+
+spark2-submit --class mnist.TrainSparkMnist --master yarn --num-executors 2 --executor-cores 2 \
+--executor-memory 1g --conf spark.driver.memoryOverhead=1g --conf spark.executor.memoryOverhead=1g \
+--deploy-mode cluster dl4j_test_scripts-1.0-SNAPSHOT-bin.jar --avgFreq 10
+
+Clean up :-
+    delete S3 bucket
+    delete EMR cluster

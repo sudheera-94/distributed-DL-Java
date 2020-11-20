@@ -37,18 +37,18 @@ public class TrainSparkMnist {
 
     /* --- Required Arguments -- */
 
-    @Parameter(names = {"--dataPath"}, description = "Path (on HDFS or similar) of data preprocessed by preprocessing script." +
-        " See PreprocessLocal or PreprocessSpark", required = true)
-    private String dataPath;
+//    @Parameter(names = {"--dataPath"}, description = "Path (on HDFS or similar) of data preprocessed by preprocessing script." +
+//        " See PreprocessLocal or PreprocessSpark", required = true)
+//    private String dataPath;
 
-    @Parameter(names = {"--masterIP"}, description = "Controller/master IP address - required. For example, 10.0.2.4", required = true)
-    private String masterIP;
+//    @Parameter(names = {"--masterIP"}, description = "Controller/master IP address - required. For example, 10.0.2.4", required = true)
+//    private String masterIP;
 
-    @Parameter(names = {"--networkMask"}, description = "Network mask for Spark communication. For example, 10.0.0.0/16", required = true)
-    private String networkMask;
+//    @Parameter(names = {"--networkMask"}, description = "Network mask for Spark communication. For example, 10.0.0.0/16", required = true)
+//    private String networkMask;
 
-    @Parameter(names = {"--numNodes"}, description = "Number of Spark nodes (machines)", required = true)
-    private int numNodes;
+//    @Parameter(names = {"--numNodes"}, description = "Number of Spark nodes (machines)", required = true)
+//    private int numNodes;
 
     @Parameter(names = {"--avgFreq"}, description = "Number of training iterations per exploitation", required = true)
     private int avgFreq;
@@ -89,7 +89,6 @@ public class TrainSparkMnist {
         conf.setAppName(sparkAppName);
         System.out.println(conf.toDebugString());
         JavaSparkContext sc = new JavaSparkContext(conf);
-
 
 
         //Set up TrainingMaster for gradient sharing training
