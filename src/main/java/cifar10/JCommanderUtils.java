@@ -15,7 +15,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ******************************************************************************/
 
-package mnist;
+package cifar10;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;

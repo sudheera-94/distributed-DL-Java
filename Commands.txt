@@ -1,5 +1,46 @@
+to get datasets from Kaggle :-
+    https://www.kaggle.com/c/data-science-bowl-2017/discussion/27698
+    7za e stage1.7z
+
 to build a jar :-
     mvn package -DskipTests
+    gzip -k dl4j_test_scripts-1.0-SNAPSHOT-bin.jar
+    cd /home/sudheera/Documents/MSc/final_project/s3_upload_jar
+    mv /home/sudheera/Documents/MSc/final_project/dl4j_test_scripts/target/dl4j_test_scripts-1.0-SNAPSHOT-bin.jar.gz .
+
+Upload the jar into s3 bucket :-
+    from here referred :- https://www.jtouzi.net/uploading-a-large-file-to-amazon-web-services-s3/
+    for i in {1..16}; do dd if=dl4j_test_scripts-1.0-SNAPSHOT-bin.jar.gz of=dl4j_test_scripts-1.0-SNAPSHOT-bin.jar"$i".gz bs=1024k skip=$[i*50 - 50] count=50; done
+
+    rm dl4j_test_scripts-1.0-SNAPSHOT-bin.jar.gz
+
+    aws s3api create-multipart-upload --bucket dl4j --key dl4j_test_scripts-1.0-SNAPSHOT-bin.jar.gz
+        Note UploadId from the json output = "MyLongUploadId"
+
+    for i in {1..16}; do aws s3api upload-part --bucket dl4j --key dl4j_test_scripts-1.0-SNAPSHOT-bin.jar.gz \
+    --upload-id MyLongUploadId \
+    --part-number $[i] --body dl4j_test_scripts-1.0-SNAPSHOT-bin.jar"$i".gz; done
+            <--Copy ETag values of each partition into a text file-->
+
+    Create a JSON file MyMultiPartUpload.json containing the following:
+        {
+        "Parts": [
+        ...
+        {
+        "ETag": "\"ETagValue-k\"",
+        "PartNumber": k
+        },
+        ...
+        ]
+        }
+
+    aws s3api complete-multipart-upload --bucket dl4j \
+    --key dl4j_test_scripts-1.0-SNAPSHOT-bin.jar.gz \
+    --upload-id MyLongUploadId \
+    --multipart-upload file://MyMultiPartUpload.json
+
+    check upload - aws s3 ls s3://dl4j/
+
 
 Cresting a EMR spark cluster :-
     https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-spark-launch.html
@@ -7,12 +48,17 @@ Cresting a EMR spark cluster :-
     cheapest EC2 - m4.large
 
     video :- https://www.youtube.com/watch?v=hSWkKk36TS8&ab_channel=LevelUp (6:20 onwards)
-    upload jar to S3
-    aws s3 cp <s3 path to jar> .
+    create EMR cluster
+    adding ssh inbound rule
 
 spark submit command :-
 
-spark2-submit --class mnist.TrainSparkMnist --master yarn --num-executors 2 --executor-cores 2 \
+    ssh -i iit-lab-key-pair.pem <--hadoop@ec2-3-139-102-224.us-east-2.compute.amazonaws.com-->
+    aws s3 cp <s3 path to jar> .
+    aws s3 cp s3://dl4j/dl4j_test_scripts-1.0-SNAPSHOT-bin.jar.gz .
+    gzip -d dl4j_test_scripts-1.0-SNAPSHOT-bin.jar.gz
+
+spark-submit --class cifar10.TrainSparkCifar10 --master yarn --num-executors 2 --executor-cores 2 \
 --executor-memory 1g --conf spark.driver.memoryOverhead=1g --conf spark.executor.memoryOverhead=1g \
 --deploy-mode cluster dl4j_test_scripts-1.0-SNAPSHOT-bin.jar --avgFreq 10
 
