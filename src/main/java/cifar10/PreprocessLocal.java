@@ -49,6 +49,8 @@ public class PreprocessLocal {
     }
 
     protected void entryPoint(String[] args) throws Exception {
+        System.out.println("----- Data Preprocessing Started -----");
+
         JCommanderUtils.parseArgs(this, args);
 
         //First, ensure we have the required data:

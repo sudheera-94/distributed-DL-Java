@@ -68,7 +68,7 @@ public class TrainSparkCifar10 {
     private String sparkAppName = "DL4JMnist";
 
     @Parameter(names = {"--numEpochs"}, description = "Number of epochs for training")
-    private int numEpochs = 20;
+    private int numEpochs = 1;
 
     @Parameter(names = {"--minibatch"}, description = "Minibatch size (of preprocessed minibatches). Also number of" +
         "minibatches per worker when fitting")
@@ -112,7 +112,7 @@ public class TrainSparkCifar10 {
         sparkNet.setListeners(new PerformanceListener(10, true));
 
         //Create data loader
-        int imageHeightWidth = 32;      //64x64 pixel input
+        int imageHeightWidth = 32;      //32x32 pixel input
         int imageChannels = 3;          //RGB
         int numClasses = Cifar10Fetcher.NUM_LABELS;
 
@@ -133,7 +133,7 @@ public class TrainSparkCifar10 {
         //Perform evaluation
         String testPath = dataPath + (dataPath.endsWith("/") ? "" : "/") + "test";
         JavaRDD<String> pathsTest = SparkUtils.listPaths(sc, testPath);
-        Evaluation evaluation = new Evaluation(Cifar10DataSetIterator.getLabels(false), 5); //Set up for top 5 accuracy
+        Evaluation evaluation = new Evaluation(Cifar10DataSetIterator.getLabels(true), 1); //Set up for top 1 accuracy
         evaluation = (Evaluation) sparkNet.doEvaluation(pathsTest, loader, evaluation)[0];
         log.info("Evaluation statistics: {}", evaluation.stats());
 
