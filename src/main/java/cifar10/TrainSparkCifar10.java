@@ -15,24 +15,26 @@ import org.deeplearning4j.core.loader.impl.RecordReaderFileBatchLoader;
 import org.deeplearning4j.datasets.fetchers.Cifar10Fetcher;
 import org.deeplearning4j.datasets.iterator.impl.Cifar10DataSetIterator;
 import org.deeplearning4j.eval.Evaluation;
-import org.deeplearning4j.nn.api.OptimizationAlgorithm;
-import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
+import org.deeplearning4j.nn.conf.ComputationGraphConfiguration;
+import org.deeplearning4j.nn.conf.ConvolutionMode;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
-import org.deeplearning4j.nn.conf.inputs.InputType;
 import org.deeplearning4j.nn.conf.layers.*;
-import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
+import org.deeplearning4j.nn.graph.ComputationGraph;
 import org.deeplearning4j.nn.weights.WeightInit;
 import org.deeplearning4j.optimize.listeners.PerformanceListener;
 import org.deeplearning4j.spark.api.TrainingMaster;
-import org.deeplearning4j.spark.impl.multilayer.SparkDl4jMultiLayer;
+import org.deeplearning4j.spark.impl.graph.SparkComputationGraph;
 import org.deeplearning4j.spark.impl.paramavg.ParameterAveragingTrainingMaster;
 import org.deeplearning4j.spark.util.SparkUtils;
 import org.deeplearning4j.util.ModelSerializer;
+import org.deeplearning4j.zoo.model.helper.DarknetHelper;
 import org.nd4j.linalg.activations.Activation;
-import org.nd4j.linalg.dataset.DataSet;
 import org.nd4j.linalg.dataset.api.preprocessor.ImagePreProcessingScaler;
-import org.nd4j.linalg.learning.config.AdaDelta;
+import org.nd4j.linalg.learning.config.AMSGrad;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
+import org.nd4j.linalg.schedule.ISchedule;
+import org.nd4j.linalg.schedule.MapSchedule;
+import org.nd4j.linalg.schedule.ScheduleType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,6 +84,8 @@ public class TrainSparkCifar10 {
     }
 
     protected void entryPoint(String[] args) throws Exception {
+        System.out.println("----- Cifar10 training Started -----");
+
         JCommanderUtils.parseArgs(this, args);
 
         SparkConf conf = new SparkConf();
@@ -92,17 +96,15 @@ public class TrainSparkCifar10 {
 
         //Set up TrainingMaster for gradient sharing training
         //Create the TrainingMaster instance
-        int examplesPerDataSetObject = 1;
-        TrainingMaster trainingMaster = new ParameterAveragingTrainingMaster.Builder(examplesPerDataSetObject)
-            .rngSeed(12345)
-            .collectTrainingStats(false)
+        TrainingMaster trainingMaster = new ParameterAveragingTrainingMaster.Builder(minibatch)
+            .workerPrefetchNumBatches(2)
             .batchSizePerWorker(minibatch)              // Minibatch size for each worker
-            .averagingFrequency(avgFreq)                // Number of training iterations per exploitation
+            .averagingFrequency(avgFreq)                // Number of training iterations per exploitation.
             .build();
 
 
-        MultiLayerNetwork net = getNetwork();
-        SparkDl4jMultiLayer sparkNet = new SparkDl4jMultiLayer(sc, net, trainingMaster);
+        ComputationGraph net = getNetwork();
+        SparkComputationGraph sparkNet = new SparkComputationGraph(sc, net, trainingMaster);
         sparkNet.setListeners(new PerformanceListener(10, true));
 
         //Create data loader
@@ -117,22 +119,25 @@ public class TrainSparkCifar10 {
         loader.setPreProcessor(new ImagePreProcessingScaler());   //Scale 0-255 valued pixels to 0-1 range
 
         //Fit the network
-        String trainPath = dataPath + (dataPath.endsWith("/") ? "" : "/") + "test";
+        String trainPath = dataPath + (dataPath.endsWith("/") ? "" : "/") + "train";
         JavaRDD<String> pathsTrain = SparkUtils.listPaths(sc, trainPath);
 
         for (int i = 0; i < numEpochs; i++) {
+            System.out.println("--- Starting Training: Epoch " + (i + 1) + " of "+ numEpochs +" --- ");
             log.info("--- Starting Training: Epoch {} of {} ---", (i + 1), numEpochs);
             sparkNet.fitPaths(pathsTrain, loader);
         }
+
+        trainingMaster.deleteTempFiles(sc);
 
         //Perform evaluation
         String testPath = dataPath + (dataPath.endsWith("/") ? "" : "/") + "test";
         JavaRDD<String> pathsTest = SparkUtils.listPaths(sc, testPath);
 
         Evaluation evaluation = new Evaluation(Cifar10DataSetIterator.getLabels(true), 1); //Set up for top 1 accuracy
-//        evaluation = (Evaluation) sparkNet.doEvaluation(pathsTest, loader, evaluation)[0];
-        sparkNet.doEvaluation(pathsTest, loader, evaluation);
+        evaluation = (Evaluation) sparkNet.doEvaluation(pathsTest, loader, evaluation)[0];
         log.info("Evaluation complete");
+        System.out.println("Evaluation statistics: " + evaluation.stats());
         log.info("Evaluation statistics: {}", evaluation.stats());
 
         if (saveDirectory != null && saveDirectory.isEmpty()) {
@@ -150,66 +155,52 @@ public class TrainSparkCifar10 {
             SparkUtils.writeStringToFile(evalPath, evaluation.stats(), sc);
         }
 
-
         log.info("----- Cifar10 Complete -----");
     }
 
-    public static MultiLayerNetwork getNetwork() {
+    public static ComputationGraph getNetwork() {
 
-        int seed = 123;
-        int channels = 3; // Number of input channels
-        int outputNum = 10; // The number of possible outcomes
-        int numLabels = Cifar10Fetcher.NUM_LABELS;
-        int height = 32;
-        int width = 32;
+        ISchedule lrSchedule = new MapSchedule.Builder(ScheduleType.EPOCH)
+                .add(0, 8e-3)
+                .add(1, 6e-3)
+                .add(3, 3e-3)
+                .add(5, 1e-3)
+                .add(7, 5e-4).build();
 
-        MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
-                .seed(seed)
-                .updater(new AdaDelta())
-                .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
+        ComputationGraphConfiguration.GraphBuilder b = new NeuralNetConfiguration.Builder()
+                .convolutionMode(ConvolutionMode.Same)
+                .l2(1e-4)
+                .updater(new AMSGrad(lrSchedule))
+                .weightInit(WeightInit.RELU)
+                .graphBuilder()
+                .addInputs("input")
+                .setOutputs("output");
+
+        DarknetHelper.addLayers(b, 1, 3, 32, 64, 2);    //32x32 out
+        DarknetHelper.addLayers(b, 2, 2, 64, 128, 0);   //32x32 out
+        DarknetHelper.addLayers(b, 3, 2, 128, 256, 2);   //16x16 out
+        DarknetHelper.addLayers(b, 4, 2, 256, 256, 0);   //16x16 out
+        DarknetHelper.addLayers(b, 5, 2, 256, 512, 2);   //8x8 out
+
+        b.addLayer("convolution2d_6", new ConvolutionLayer.Builder(1, 1)
+                .nIn(512)
+                .nOut(Cifar10Fetcher.NUM_LABELS)
                 .weightInit(WeightInit.XAVIER)
-                .list()
-                .layer(new ConvolutionLayer.Builder().kernelSize(3,3).stride(1,1).padding(1,1).activation(Activation.LEAKYRELU)
-                        .nIn(channels).nOut(32).build())
-                .layer(new BatchNormalization())
-                .layer(new SubsamplingLayer.Builder().kernelSize(2,2).stride(2,2).poolingType(SubsamplingLayer.PoolingType.MAX).build())
+                .stride(1, 1)
+                .activation(Activation.IDENTITY)
+                .build(), "maxpooling2d_5")
+                .addLayer("globalpooling", new GlobalPoolingLayer.Builder(PoolingType.AVG)
+                        .build(), "convolution2d_6")
+                .addLayer("loss", new LossLayer.Builder(LossFunctions.LossFunction.NEGATIVELOGLIKELIHOOD)
+                        .activation(Activation.SOFTMAX).build(), "globalpooling")
+                .setOutputs("loss");
 
-                .layer(new ConvolutionLayer.Builder().kernelSize(1,1).stride(1,1).padding(1,1).activation(Activation.LEAKYRELU)
-                        .nOut(16).build())
-                .layer(new BatchNormalization())
-                .layer(new ConvolutionLayer.Builder().kernelSize(3,3).stride(1,1).padding(1,1).activation(Activation.LEAKYRELU)
-                        .nOut(64).build())
-                .layer(new BatchNormalization())
-                .layer(new SubsamplingLayer.Builder().kernelSize(2,2).stride(2,2).poolingType(SubsamplingLayer.PoolingType.MAX).build())
+        ComputationGraphConfiguration conf = b.build();
 
-                .layer(new ConvolutionLayer.Builder().kernelSize(1,1).stride(1,1).padding(1,1).activation(Activation.LEAKYRELU)
-                        .nOut(32).build())
-                .layer(new BatchNormalization())
-                .layer(new ConvolutionLayer.Builder().kernelSize(3,3).stride(1,1).padding(1,1).activation(Activation.LEAKYRELU)
-                        .nOut(128).build())
-                .layer(new BatchNormalization())
-                .layer(new ConvolutionLayer.Builder().kernelSize(1,1).stride(1,1).padding(1,1).activation(Activation.LEAKYRELU)
-                        .nOut(64).build())
-                .layer(new BatchNormalization())
-                .layer(new ConvolutionLayer.Builder().kernelSize(1,1).stride(1,1).padding(1,1).activation(Activation.LEAKYRELU)
-                        .nOut(numLabels).build())
-                .layer(new BatchNormalization())
+        ComputationGraph net = new ComputationGraph(conf);
+        net.init();
 
-                .layer(new SubsamplingLayer.Builder().kernelSize(2,2).stride(2,2).poolingType(SubsamplingLayer.PoolingType.AVG).build())
-
-                .layer(new OutputLayer.Builder(LossFunctions.LossFunction.NEGATIVELOGLIKELIHOOD)
-                        .name("output")
-                        .nOut(numLabels)
-                        .dropOut(0.8)
-                        .activation(Activation.SOFTMAX)
-                        .build())
-                .setInputType(InputType.convolutional(height, width, channels))
-                .build();
-
-        MultiLayerNetwork model = new MultiLayerNetwork(conf);
-        model.init();
-
-        return model;
+        return net;
     }
 
 }

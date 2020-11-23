@@ -6,6 +6,7 @@ import org.apache.log4j.BasicConfigurator;
 import org.deeplearning4j.datasets.fetchers.DataSetType;
 import org.deeplearning4j.datasets.iterator.impl.Cifar10DataSetIterator;
 import org.deeplearning4j.eval.Evaluation;
+import org.deeplearning4j.nn.graph.ComputationGraph;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.optimize.listeners.PerformanceListener;
 import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
@@ -41,7 +42,7 @@ public class TrainLocalCifar10 {
         iter.setPreProcessor(new ImagePreProcessingScaler());   //Scale 0-255 valued pixels to 0-1 range
 
         //Create the network
-        MultiLayerNetwork net = TrainSparkCifar10.getNetwork();
+        ComputationGraph net = TrainSparkCifar10.getNetwork();
         net.setListeners(new PerformanceListener(50, true));
 
         //Reduce auto GC frequency for better performance
@@ -55,20 +56,20 @@ public class TrainLocalCifar10 {
         DataSetIterator test = new Cifar10DataSetIterator(batchSize, DataSetType.TEST);
         test.setPreProcessor(new ImagePreProcessingScaler());   //Scale 0-255 valued pixels to 0-1 range
 
-        Evaluation e = new Evaluation(Cifar10DataSetIterator.getLabels(true), 1); //Set up for top 1 accuracy
-        net.doEvaluation(test, e);
+//        Evaluation e = new Evaluation(Cifar10DataSetIterator.getLabels(true), 1); //Set up for top 1 accuracy
+        System.out.println(net.evaluate(test).stats());
         log.info("Evaluation complete");
-        log.info(e.stats());
+//        log.info(e.stats());
 
-        if (saveDir != null && !saveDir.isEmpty()) {
-            File sd = new File(saveDir);
-            if (!sd.exists())
-                sd.mkdirs();
-
-            log.info("Saving network and evaluation stats to directory: {}", saveDir);
-            net.save(new File(saveDir, "trainedNet.bin"));
-            FileUtils.writeStringToFile(new File(saveDir, "evaulation.txt"), e.stats(), StandardCharsets.UTF_8);
-        }
+//        if (saveDir != null && !saveDir.isEmpty()) {
+//            File sd = new File(saveDir);
+//            if (!sd.exists())
+//                sd.mkdirs();
+//
+//            log.info("Saving network and evaluation stats to directory: {}", saveDir);
+//            net.save(new File(saveDir, "trainedNet.bin"));
+//            FileUtils.writeStringToFile(new File(saveDir, "evaulation.txt"), e.stats(), StandardCharsets.UTF_8);
+//        }
 
         log.info("----- Examples Complete -----");
     }
