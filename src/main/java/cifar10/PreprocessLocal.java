@@ -18,6 +18,7 @@
 package cifar10;
 
 import com.beust.jcommander.Parameter;
+import org.apache.log4j.BasicConfigurator;
 import org.datavec.image.loader.NativeImageLoader;
 import org.deeplearning4j.common.resources.DL4JResources;
 import org.deeplearning4j.common.resources.ResourceType;
@@ -45,6 +46,7 @@ public class PreprocessLocal {
     private int batchSize = 32;
 
     public static void main(String[] args) throws Exception {
+        BasicConfigurator.configure();
         new PreprocessLocal().entryPoint(args);
     }
 

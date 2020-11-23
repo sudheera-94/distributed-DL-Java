@@ -4,6 +4,7 @@ import com.beust.jcommander.Parameter;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.log4j.BasicConfigurator;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -28,6 +29,7 @@ import org.deeplearning4j.spark.impl.paramavg.ParameterAveragingTrainingMaster;
 import org.deeplearning4j.spark.util.SparkUtils;
 import org.deeplearning4j.util.ModelSerializer;
 import org.nd4j.linalg.activations.Activation;
+import org.nd4j.linalg.dataset.DataSet;
 import org.nd4j.linalg.dataset.api.preprocessor.ImagePreProcessingScaler;
 import org.nd4j.linalg.learning.config.AdaDelta;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
@@ -45,15 +47,6 @@ public class TrainSparkCifar10 {
     @Parameter(names = {"--dataPath"}, description = "Path (on HDFS or similar) of data preprocessed by preprocessing script." +
         " See PreprocessLocal or PreprocessSpark", required = true)
     private String dataPath;
-
-//    @Parameter(names = {"--masterIP"}, description = "Controller/master IP address - required. For example, 10.0.2.4", required = true)
-//    private String masterIP;
-
-//    @Parameter(names = {"--networkMask"}, description = "Network mask for Spark communication. For example, 10.0.0.0/16", required = true)
-//    private String networkMask;
-
-//    @Parameter(names = {"--numNodes"}, description = "Number of Spark nodes (machines)", required = true)
-//    private int numNodes;
 
     @Parameter(names = {"--avgFreq"}, description = "Number of training iterations per exploitation", required = true)
     private int avgFreq;
@@ -84,6 +77,7 @@ public class TrainSparkCifar10 {
     private int port = 40123;
 
     public static void main(String[] args) throws Exception {
+        BasicConfigurator.configure();
         new TrainSparkCifar10().entryPoint(args);
     }
 
@@ -123,8 +117,9 @@ public class TrainSparkCifar10 {
         loader.setPreProcessor(new ImagePreProcessingScaler());   //Scale 0-255 valued pixels to 0-1 range
 
         //Fit the network
-        String trainPath = dataPath + (dataPath.endsWith("/") ? "" : "/") + "train";
+        String trainPath = dataPath + (dataPath.endsWith("/") ? "" : "/") + "test";
         JavaRDD<String> pathsTrain = SparkUtils.listPaths(sc, trainPath);
+
         for (int i = 0; i < numEpochs; i++) {
             log.info("--- Starting Training: Epoch {} of {} ---", (i + 1), numEpochs);
             sparkNet.fitPaths(pathsTrain, loader);
@@ -133,8 +128,11 @@ public class TrainSparkCifar10 {
         //Perform evaluation
         String testPath = dataPath + (dataPath.endsWith("/") ? "" : "/") + "test";
         JavaRDD<String> pathsTest = SparkUtils.listPaths(sc, testPath);
+
         Evaluation evaluation = new Evaluation(Cifar10DataSetIterator.getLabels(true), 1); //Set up for top 1 accuracy
-        evaluation = (Evaluation) sparkNet.doEvaluation(pathsTest, loader, evaluation)[0];
+//        evaluation = (Evaluation) sparkNet.doEvaluation(pathsTest, loader, evaluation)[0];
+        sparkNet.doEvaluation(pathsTest, loader, evaluation);
+        log.info("Evaluation complete");
         log.info("Evaluation statistics: {}", evaluation.stats());
 
         if (saveDirectory != null && saveDirectory.isEmpty()) {

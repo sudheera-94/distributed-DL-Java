@@ -43,16 +43,6 @@ Upload the jar into s3 bucket :-
 
     check upload - aws s3 ls s3://dl4j/
 
-Running pre-processor Jar :-
-    ssh -i iit-lab-key-pair.pem ec2-user@<public-ip>
-    cd Cifar10_jar/
-    aws s3 cp s3://dl4j/dl4j_test_scripts-1.0-SNAPSHOT-bin.jar.gz .
-    gzip -dk dl4j_test_scripts-1.0-SNAPSHOT-bin.jar.gz
-
-
-
-    aws s3 cp dl4j_test_scripts-1.0-SNAPSHOT-bin.jar s3://dl4j/ -> put Cifar10 jar into S3
-
 Cresting a EMR spark cluster :-
     https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-spark-launch.html
 
@@ -67,6 +57,8 @@ spark submit command :-
     ssh -i iit-lab-key-pair.pem <--hadoop@ec2-3-139-102-224.us-east-2.compute.amazonaws.com-->
     aws s3 cp s3://dl4j/dl4j_test_scripts-1.0-SNAPSHOT-bin.jar.gz .
     gzip -d dl4j_test_scripts-1.0-SNAPSHOT-bin.jar.gz
+
+    <-- Running pre-processor Jar :-
 
     java -cp dl4j_test_scripts-1.0-SNAPSHOT-bin.jar cifar10.PreprocessLocal --localSaveDir /home/hadoop/Cifar10
     aws s3 cp --recursive /home/hadoop/Cifar10 s3://dl4j/ -> put Cifar10 data into S3
