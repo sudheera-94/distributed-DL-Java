@@ -13,3 +13,5 @@ build
 ligradle
 target
 test-logs
+/src/main/resources/
+/out/

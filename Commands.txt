@@ -3,7 +3,14 @@ to get datasets from Kaggle :-
     7za e stage1.7z
 
 to build a jar :-
-    mvn package -DskipTests
+    If Java - mvn package -DskipTests
+
+to run the jar locally :-
+    spark-submit --class mnist.MnistSpark --master spark://CampNou:7077 --num-executors 2 --executor-memory 1g \
+    --conf spark.driver.memoryOverhead=1g --conf spark.executor.memoryOverhead=1g \
+    --driver-memory 4g dl4j_test_scripts-1.0-SNAPSHOT-bin.jar
+
+Run jar in AWS :-
     gzip -k dl4j_test_scripts-1.0-SNAPSHOT-bin.jar
     cd /home/sudheera/Documents/MSc/final_project/s3_upload_jar
     mv /home/sudheera/Documents/MSc/final_project/dl4j_test_scripts/target/dl4j_test_scripts-1.0-SNAPSHOT-bin.jar.gz .
@@ -61,13 +68,17 @@ spark submit command :-
     <-- Running pre-processor Jar :-
 
     mkdir Cifar10
-    java -cp dl4j_test_scripts-1.0-SNAPSHOT-bin.jar cifar10.PreprocessLocal --localSaveDir /home/hadoop/Cifar10
+    java -cp dl4j_test_scripts-1.0-SNAPSHOT-bin-1.0-SNAPSHOT-bin.jar cifar10.PreprocessLocal --localSaveDir /home/hadoop/Cifar10
     aws s3 cp --recursive /home/hadoop/Cifar10 s3://dl4jcifar10/ -> put Cifar10 data into S3
 
 spark-submit --class cifar10.TrainSparkCifar10 --master yarn --num-executors 2 --executor-cores 2 \
 --executor-memory 1g --conf spark.driver.memoryOverhead=1g --conf spark.executor.memoryOverhead=1g \
 --deploy-mode cluster dl4j_test_scripts-1.0-SNAPSHOT-bin.jar --avgFreq 10 \
 --dataPath s3://dl4jcifar10/
+
+spark-submit --class mnist.MnistSpark --master yarn --num-executors 2 --executor-cores 2 \
+--executor-memory 1g --conf spark.driver.memoryOverhead=1g --conf spark.executor.memoryOverhead=1g \
+--deploy-mode cluster dl4j_test_scripts-1.0-SNAPSHOT-bin.jar
 
 Clean up :-
     delete S3 bucket
