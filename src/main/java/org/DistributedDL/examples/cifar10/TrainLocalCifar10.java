@@ -1,22 +1,16 @@
-package cifar10;
+package org.DistributedDL.examples.cifar10;
 
 import com.beust.jcommander.Parameter;
-import org.apache.commons.io.FileUtils;
 import org.apache.log4j.BasicConfigurator;
 import org.deeplearning4j.datasets.fetchers.DataSetType;
 import org.deeplearning4j.datasets.iterator.impl.Cifar10DataSetIterator;
-import org.deeplearning4j.eval.Evaluation;
 import org.deeplearning4j.nn.graph.ComputationGraph;
-import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.optimize.listeners.PerformanceListener;
 import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
 import org.nd4j.linalg.dataset.api.preprocessor.ImagePreProcessingScaler;
 import org.nd4j.linalg.factory.Nd4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.File;
-import java.nio.charset.StandardCharsets;
 
 public class TrainLocalCifar10 {
     public static Logger log = LoggerFactory.getLogger(TrainLocalCifar10.class);

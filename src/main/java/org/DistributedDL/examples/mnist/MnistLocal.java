@@ -1,4 +1,4 @@
-package mnist;
+package org.DistributedDL.examples.mnist;
 
 import org.apache.log4j.BasicConfigurator;
 import org.datavec.api.io.labels.ParentPathLabelGenerator;

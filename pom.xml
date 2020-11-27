@@ -5,10 +5,10 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.sudheera</groupId>
-    <artifactId>dl4j_test_scripts</artifactId>
+    <artifactId>distributed_dl</artifactId>
     <version>1.0-SNAPSHOT</version>
-    <name>Testing Distributed Training with DL4J</name>
-    <description>A set of examples for testing distributed training with the DL4J framework</description>
+    <name>Distributed Training with DL4J</name>
+    <description>Distributed training with the DL4J framework in Spark</description>
 
     <properties>
         <dl4j-master.version>1.0.0-beta7</dl4j-master.version>

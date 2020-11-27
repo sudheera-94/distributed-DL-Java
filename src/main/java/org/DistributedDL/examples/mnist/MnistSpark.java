@@ -1,4 +1,4 @@
-package mnist;
+package org.DistributedDL.examples.mnist;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
@@ -41,12 +41,17 @@ public class MnistSpark {
     @Parameter(names = "-numEpochs", description = "Number of epochs for training")
     private int numEpochs = 1;
 
+    @Parameter(names = "-avgFreq", description = "Number of iterations per exploration step")
+    private int avgFreq = 5;
+
+    // Main function of the class
     public static void main(String[] args) throws Exception {
-        BasicConfigurator.configure();
+        BasicConfigurator.configure(); // To configure logging
         new MnistSpark().entryPoint(args);
     }
 
     protected void entryPoint(String[] args) throws Exception {
+
         //Handle command line arguments
         JCommander jcmdr = new JCommander(this);
         try {
@@ -58,6 +63,7 @@ public class MnistSpark {
             throw e;
         }
 
+        // Configuring JavaSparkContext
         SparkConf sparkConf = new SparkConf();
         if (useSparkLocal) {
             sparkConf.setMaster("local[*]");
@@ -67,8 +73,12 @@ public class MnistSpark {
 
         //Load the data into memory then parallelize
         //This isn't a good approach in general - but is simple to use for this example
+
+        // Creating DataSetIterators
         DataSetIterator iterTrain = new MnistDataSetIterator(batchSizePerWorker, true, 12345);
         DataSetIterator iterTest = new MnistDataSetIterator(batchSizePerWorker, true, 12345);
+
+        // Parallelize dataset
         List<DataSet> trainDataList = new ArrayList<>();
         List<DataSet> testDataList = new ArrayList<>();
         while (iterTrain.hasNext()) {
@@ -77,13 +87,43 @@ public class MnistSpark {
         while (iterTest.hasNext()) {
             testDataList.add(iterTest.next());
         }
-
         JavaRDD<DataSet> trainData = sc.parallelize(trainDataList);
         JavaRDD<DataSet> testData = sc.parallelize(testDataList);
 
 
-        //----------------------------------
-        //Create network configuration and conduct network training
+        //Create network configuration
+        MultiLayerConfiguration conf = getMnistNetwork();
+
+        // Configuring synchronous training master
+        TrainingMaster tm = new ParameterAveragingTrainingMaster.Builder(batchSizePerWorker)    //Each DataSet object: contains (by default) 32 examples
+                .averagingFrequency(avgFreq)            // Number of iterations per exploration stage
+                .workerPrefetchNumBatches(2)            // Number of minibatches to asynchronously prefetch on each worker when training.
+                .batchSizePerWorker(batchSizePerWorker) // Number of examples per user per fit
+                .build();
+
+        //Create the Spark network
+        SparkDl4jMultiLayer sparkNet = new SparkDl4jMultiLayer(sc, conf, tm);
+
+        //Execute training:
+        for (int i = 0; i < numEpochs; i++) {
+            sparkNet.fit(trainData);
+            log.info("Completed Epoch {}", i);
+        }
+
+        //Perform evaluation (distributed)
+        Evaluation evaluation = sparkNet.evaluate(testData);
+        log.info("***** Evaluation *****");
+        log.info(evaluation.stats());
+
+        //Delete the temp training files
+        tm.deleteTempFiles(sc);
+
+        log.info("***** Example Complete *****");
+    }
+
+    // Function to give the network architecture
+    private static MultiLayerConfiguration getMnistNetwork() {
+
         MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
                 .seed(123)
                 .l2(0.0005)
@@ -120,31 +160,7 @@ public class MnistSpark {
                 .setInputType(InputType.convolutionalFlat(28,28,1)) //See note below
                 .build();
 
-        //Configuration for Spark training: see http://deeplearning4j.org/spark for explanation of these configuration options
-        TrainingMaster tm = new ParameterAveragingTrainingMaster.Builder(batchSizePerWorker)    //Each DataSet object: contains (by default) 32 examples
-                .averagingFrequency(5)
-                .workerPrefetchNumBatches(2)            //Async prefetching: 2 examples per worker
-                .batchSizePerWorker(batchSizePerWorker)
-                .build();
-
-        //Create the Spark network
-        SparkDl4jMultiLayer sparkNet = new SparkDl4jMultiLayer(sc, conf, tm);
-
-        //Execute training:
-        for (int i = 0; i < numEpochs; i++) {
-            sparkNet.fit(trainData);
-            log.info("Completed Epoch {}", i);
-        }
-
-        //Perform evaluation (distributed)
-        Evaluation evaluation = sparkNet.evaluate(testData);
-        log.info("***** Evaluation *****");
-        log.info(evaluation.stats());
-
-        //Delete the temp training files, now that we are done with them
-        tm.deleteTempFiles(sc);
-
-        log.info("***** Example Complete *****");
+        return conf;
     }
 
 }

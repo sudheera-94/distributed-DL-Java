@@ -1,4 +1,4 @@
-package cifar10;
+package org.DistributedDL.examples.cifar10;
 
 import com.beust.jcommander.Parameter;
 import org.apache.commons.io.FilenameUtils;

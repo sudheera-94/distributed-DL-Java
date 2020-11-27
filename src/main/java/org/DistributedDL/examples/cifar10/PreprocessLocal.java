@@ -15,7 +15,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ******************************************************************************/
 
-package cifar10;
+package org.DistributedDL.examples.cifar10;
 
 import com.beust.jcommander.Parameter;
 import org.apache.log4j.BasicConfigurator;

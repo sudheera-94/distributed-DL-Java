@@ -6,9 +6,18 @@ to build a jar :-
     If Java - mvn package -DskipTests
 
 to run the jar locally :-
-    spark-submit --class mnist.MnistSpark --master spark://CampNou:7077 --num-executors 2 --executor-memory 1g \
+    start-master.sh
+    start-slave.sh spark://CampNou:7077
+    start-slave.sh spark://CampNou:7077
+
+    cd /home/sudheera/Documents/MSc/final_project/dl4j_test_scripts/target
+
+    spark-submit --class org.DistributedDL.examples.mnist.MnistSpark --master spark://CampNou:7077 --num-executors 2 --executor-memory 1g \
     --conf spark.driver.memoryOverhead=1g --conf spark.executor.memoryOverhead=1g \
     --driver-memory 4g dl4j_test_scripts-1.0-SNAPSHOT-bin.jar
+
+    stop-slave.sh spark://CampNou:7077
+    stop-master.sh
 
 Run jar in AWS :-
     gzip -k dl4j_test_scripts-1.0-SNAPSHOT-bin.jar
@@ -76,7 +85,7 @@ Run jar in AWS :-
     --deploy-mode cluster dl4j_test_scripts-1.0-SNAPSHOT-bin.jar --avgFreq 10 \
     --dataPath s3://dl4jcifar10/
 
-    spark-submit --class mnist.MnistSpark --master yarn --num-executors 2 --executor-cores 2 \
+    spark-submit --class org.DistributedDL.examples.mnist.MnistSpark --master yarn --num-executors 2 --executor-cores 2 \
     --executor-memory 1g --conf spark.driver.memoryOverhead=1g --conf spark.executor.memoryOverhead=1g \
     --deploy-mode cluster dl4j_test_scripts-1.0-SNAPSHOT-bin.jar
 
