@@ -7,13 +7,16 @@ import org.apache.log4j.BasicConfigurator;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.datavec.api.io.labels.ParentPathLabelGenerator;
+import org.datavec.api.split.FileSplit;
+import org.datavec.image.loader.NativeImageLoader;
+import org.datavec.image.recordreader.ImageRecordReader;
 import org.deeplearning4j.api.storage.StatsStorageRouter;
-//import org.deeplearning4j.core.storage.impl.RemoteUIStatsStorageRouter;
 import org.deeplearning4j.api.storage.impl.RemoteUIStatsStorageRouter;
+import org.deeplearning4j.datasets.datavec.RecordReaderDataSetIterator;
 import org.deeplearning4j.datasets.iterator.impl.MnistDataSetIterator;
 import org.deeplearning4j.eval.Evaluation;
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
-import org.deeplearning4j.nn.conf.LearningRatePolicy;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 import org.deeplearning4j.nn.conf.Updater;
@@ -23,16 +26,17 @@ import org.deeplearning4j.nn.weights.WeightInit;
 import org.deeplearning4j.spark.api.TrainingMaster;
 import org.deeplearning4j.spark.impl.multilayer.SparkDl4jMultiLayer;
 import org.deeplearning4j.spark.impl.paramavg.ParameterAveragingTrainingMaster;
-//import org.deeplearning4j.ui.model.stats.StatsListener;
 import org.deeplearning4j.ui.stats.StatsListener;
 import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.dataset.DataSet;
 import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
-import org.nd4j.linalg.learning.config.Adam;
+import org.nd4j.linalg.dataset.api.preprocessor.DataNormalization;
+import org.nd4j.linalg.dataset.api.preprocessor.ImagePreProcessingScaler;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.util.*;
 
 public class MnistSpark {
@@ -46,7 +50,7 @@ public class MnistSpark {
     private int batchSizePerWorker = 16;
 
     @Parameter(names = "-numEpochs", description = "Number of epochs for training")
-    private int numEpochs = 5;
+    private int numEpochs = 1;
 
     @Parameter(names = "-avgFreq", description = "Number of iterations per exploration step")
     private int avgFreq = 5;
@@ -58,6 +62,12 @@ public class MnistSpark {
     }
 
     protected void entryPoint(String[] args) throws Exception {
+        int rngseed = 123;
+        Random randNumGen = new Random(rngseed);
+        int height = 28;
+        int width = 28;
+        int channels = 1;
+        int outputNum = 10;
 
         //Handle command line arguments
         JCommander jcmdr = new JCommander(this);
@@ -73,7 +83,7 @@ public class MnistSpark {
         // Configuring JavaSparkContext
         SparkConf sparkConf = new SparkConf();
         if (useSparkLocal) {
-            sparkConf.setMaster("local[*]");
+            sparkConf.setMaster("local[2]");
         }
         sparkConf.setAppName("DL4J Spark MLP Example");
         JavaSparkContext sc = new JavaSparkContext(sparkConf);
@@ -82,21 +92,35 @@ public class MnistSpark {
         //This isn't a good approach in general - but is simple to use for this example
 
         // Creating DataSetIterators
-        DataSetIterator iterTrain = new MnistDataSetIterator(batchSizePerWorker, true, 12345);
-        DataSetIterator iterTest = new MnistDataSetIterator(batchSizePerWorker, true, 12345);
+//        DataSetIterator iterTrain = new MnistDataSetIterator(batchSizePerWorker, true, 12345);
+//        DataSetIterator iterTest = new MnistDataSetIterator(batchSizePerWorker, true, 12345);
 
-        // Parallelize dataset
+        // Preparing training data
+            // Define the File Path
+        File trainDataFiles = new File("mnist_png/training");
+        // Define the FileSplit(PATH, ALLOWED FORMATS,random)
+        FileSplit train = new FileSplit(trainDataFiles, NativeImageLoader.ALLOWED_FORMATS, randNumGen);
+
+            // Extract the parent path as the image label
+        ParentPathLabelGenerator labelMaker = new ParentPathLabelGenerator();
+        ImageRecordReader recordReader = new ImageRecordReader(height, width, channels, labelMaker);
+
+            // Initialize the record reader and iterator
+        recordReader.initialize(train);
+        DataSetIterator iterTrain = new RecordReaderDataSetIterator(recordReader,batchSizePerWorker,1,
+                outputNum);
+
+            // Scale pixel values to 0-1
+        DataNormalization scaler = new ImagePreProcessingScaler(0,1);
+        scaler.fit(iterTrain);
+        iterTrain.setPreProcessor(scaler);
+
+            // Parallelize dataset
         List<DataSet> trainDataList = new ArrayList<>();
-        List<DataSet> testDataList = new ArrayList<>();
         while (iterTrain.hasNext()) {
             trainDataList.add(iterTrain.next());
         }
-        while (iterTest.hasNext()) {
-            testDataList.add(iterTest.next());
-        }
         JavaRDD<DataSet> trainData = sc.parallelize(trainDataList);
-        JavaRDD<DataSet> testData = sc.parallelize(testDataList);
-
 
         //Create network configuration
         MultiLayerConfiguration conf = getMnistNetwork();
@@ -113,13 +137,35 @@ public class MnistSpark {
 
         // Integrating UI dashboard server
         StatsStorageRouter remoteUiRouter = new RemoteUIStatsStorageRouter("http://localhost:9000");
-        sparkNet.setListeners(new StatsListener(remoteUiRouter));
+        sparkNet.setListeners(remoteUiRouter, Collections.singletonList(new StatsListener(null)));
 
         //Execute training:
         for (int i = 0; i < numEpochs; i++) {
             sparkNet.fit(trainData);
             log.info("Completed Epoch {}", i);
         }
+
+        // Preparing training data
+        File testDataFiles = new File("mnist_png/testing");
+
+            // Define the FileSplit(PATH, ALLOWED FORMATS,random)
+        FileSplit test = new FileSplit(testDataFiles, NativeImageLoader.ALLOWED_FORMATS, randNumGen);
+
+            // Initialize the record reader
+        recordReader.initialize(test);
+
+            // DataSet Iterator
+        DataSetIterator iterTest = new RecordReaderDataSetIterator(recordReader,batchSizePerWorker,1,
+                outputNum);
+        scaler.fit(iterTest);
+        iterTest.setPreProcessor(scaler);
+
+            // Parallelize dataset
+        List<DataSet> testDataList = new ArrayList<>();
+        while (iterTest.hasNext()) {
+            testDataList.add(iterTest.next());
+        }
+        JavaRDD<DataSet> testData = sc.parallelize(testDataList);
 
         //Perform evaluation (distributed)
         Evaluation evaluation = sparkNet.evaluate(testData);

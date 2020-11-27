@@ -1,23 +1,16 @@
 package org.DistributedDL.examples.mnist;
 
 import org.apache.log4j.BasicConfigurator;
-import org.datavec.api.io.labels.ParentPathLabelGenerator;
-import org.datavec.api.split.FileSplit;
-import org.datavec.image.loader.NativeImageLoader;
-import org.datavec.image.recordreader.ImageRecordReader;
-import org.deeplearning4j.datasets.datavec.RecordReaderDataSetIterator;
 import org.deeplearning4j.datasets.iterator.impl.MnistDataSetIterator;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.optimize.listeners.ScoreIterationListener;
-//import org.nd4j.common.io.ClassPathResource;
 import org.deeplearning4j.eval.Evaluation;
 import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
 import org.nd4j.linalg.dataset.api.preprocessor.ImagePreProcessingScaler;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Random;
 
 import static org.DistributedDL.examples.mnist.MnistSpark.getMnistNetwork;
 
