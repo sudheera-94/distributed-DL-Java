@@ -37,6 +37,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.*;
 
 public class MnistSpark {
@@ -92,23 +93,26 @@ public class MnistSpark {
         //This isn't a good approach in general - but is simple to use for this example
 
         // Creating DataSetIterators
-//        DataSetIterator iterTrain = new MnistDataSetIterator(batchSizePerWorker, true, 12345);
-//        DataSetIterator iterTest = new MnistDataSetIterator(batchSizePerWorker, true, 12345);
+        DataSetIterator iterTrain = new MnistDataSetIterator(batchSizePerWorker, true, 12345);
+        DataSetIterator iterTest = new MnistDataSetIterator(batchSizePerWorker, true, 12345);
 
         // Preparing training data
             // Define the File Path
-        File trainDataFiles = new File("mnist_png/training");
-        // Define the FileSplit(PATH, ALLOWED FORMATS,random)
-        FileSplit train = new FileSplit(trainDataFiles, NativeImageLoader.ALLOWED_FORMATS, randNumGen);
+//        File trainDataFiles = new File("mnist_png/training");
+//            // Define the FileSplit(PATH, ALLOWED FORMATS,random)
+//        FileSplit train = new FileSplit(trainDataFiles, NativeImageLoader.ALLOWED_FORMATS, randNumGen);
+//
+//            // Extract the parent path as the image label
+//        ParentPathLabelGenerator labelMaker = new ParentPathLabelGenerator();
+//        ImageRecordReader recordReader = new ImageRecordReader(height, width, channels, labelMaker);
+//
+//            // Initialize the record reader and iterator
+//        recordReader.initialize(train);
+//        DataSetIterator iterTrain = new RecordReaderDataSetIterator(recordReader,batchSizePerWorker,1,
+//                outputNum);
 
-            // Extract the parent path as the image label
-        ParentPathLabelGenerator labelMaker = new ParentPathLabelGenerator();
-        ImageRecordReader recordReader = new ImageRecordReader(height, width, channels, labelMaker);
-
-            // Initialize the record reader and iterator
-        recordReader.initialize(train);
-        DataSetIterator iterTrain = new RecordReaderDataSetIterator(recordReader,batchSizePerWorker,1,
-                outputNum);
+//        DataSetIterator iterTrain = getDataSetIterator("mnist_png/training", rngseed, height, width, channels,
+//                batchSizePerWorker, outputNum);
 
             // Scale pixel values to 0-1
         DataNormalization scaler = new ImagePreProcessingScaler(0,1);
@@ -145,18 +149,9 @@ public class MnistSpark {
             log.info("Completed Epoch {}", i);
         }
 
-        // Preparing training data
-        File testDataFiles = new File("mnist_png/testing");
-
-            // Define the FileSplit(PATH, ALLOWED FORMATS,random)
-        FileSplit test = new FileSplit(testDataFiles, NativeImageLoader.ALLOWED_FORMATS, randNumGen);
-
-            // Initialize the record reader
-        recordReader.initialize(test);
-
-            // DataSet Iterator
-        DataSetIterator iterTest = new RecordReaderDataSetIterator(recordReader,batchSizePerWorker,1,
-                outputNum);
+        // Test DataSet Iterator
+//        DataSetIterator iterTest = getDataSetIterator("mnist_png/testing", rngseed, height, width, channels,
+//                batchSizePerWorker, outputNum);
         scaler.fit(iterTest);
         iterTest.setPreProcessor(scaler);
 
@@ -252,6 +247,32 @@ public class MnistSpark {
                 .backprop(true).pretrain(false).build();
 
         return conf;
+    }
+
+    // Function to load data
+    /*
+    * Inputs :-
+    *   path      - Path to find dataset (One mail folder -> In it folder for each class. Folder name = class name)
+    *   rngseed   - Random seed
+    *   height    - Image height
+    *   width     - Image width
+    *   channels  - Number of channels in an image
+    *   batchSize - Batch size per worker
+    *   outputNum - Number of classes
+    */
+    public static DataSetIterator getDataSetIterator(String path, int rngseed, int height, int width, int channels,
+                                                     int batchSize, int outputNum)
+            throws IOException {
+        Random randNumGen = new Random(rngseed);
+
+        File data = new File(path);
+        FileSplit dataSplit = new FileSplit(data, NativeImageLoader.ALLOWED_FORMATS, randNumGen);
+        ParentPathLabelGenerator labelMaker = new ParentPathLabelGenerator();
+        ImageRecordReader recordReader = new ImageRecordReader(height, width, channels, labelMaker);
+        recordReader.initialize(dataSplit);
+        DataSetIterator dataIter = new RecordReaderDataSetIterator(recordReader, batchSize, 1, outputNum);
+        return dataIter;
+
     }
 
 }

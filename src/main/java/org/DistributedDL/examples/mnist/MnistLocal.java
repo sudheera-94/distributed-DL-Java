@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.util.Random;
 
 import static org.DistributedDL.examples.mnist.MnistSpark.getMnistNetwork;
+import static org.DistributedDL.examples.mnist.MnistSpark.getDataSetIterator;
 
 public class MnistLocal {
 
@@ -39,28 +40,15 @@ public class MnistLocal {
                 int width = 28;
                 int channels = 1;
                 int outputNum = 10;
-                Random randNumGen = new Random(123);
+                int rngseed = 123;
+                Random randNumGen = new Random(rngseed);
 
                 // Loading data and Visualization
                 System.out.println("Data load and vectorization...");
 
-//                DataSetIterator trainIter = new MnistDataSetIterator(batchSizePerWorker, true, 12345);
-//                DataSetIterator testIter = new MnistDataSetIterator(batchSizePerWorker, true, 12345);
-
-                // Preparing training data
-                // Define the File Path
-                File trainDataFiles = new File("mnist_png/training");
-                // Define the FileSplit(PATH, ALLOWED FORMATS,random)
-                FileSplit train = new FileSplit(trainDataFiles, NativeImageLoader.ALLOWED_FORMATS, randNumGen);
-
-                // Extract the parent path as the image label
-                ParentPathLabelGenerator labelMaker = new ParentPathLabelGenerator();
-                ImageRecordReader recordReader = new ImageRecordReader(height, width, channels, labelMaker);
-
                 // Initialize the record reader and iterator
-                recordReader.initialize(train);
-                DataSetIterator trainIter = new RecordReaderDataSetIterator(recordReader,batchSizePerWorker,1,
-                        outputNum);
+                DataSetIterator trainIter = getDataSetIterator("mnist_png/training", rngseed, height, width,
+                        channels, batchSizePerWorker, outputNum);
 
                 // Pixel values from 0-255 to 0-1 (min-max scaling)
                 DataNormalization scaler = new ImagePreProcessingScaler(0, 1);
@@ -80,32 +68,12 @@ public class MnistLocal {
                 }
 
                 System.out.println("******EVALUATE MODEL******");
-                recordReader.reset();
-
-                // Preparing training data
-                File testDataFiles = new File("mnist_png/testing");
-
-                // Define the FileSplit(PATH, ALLOWED FORMATS,random)
-                FileSplit test = new FileSplit(testDataFiles, NativeImageLoader.ALLOWED_FORMATS, randNumGen);
-
-                // Initialize the record reader
-                recordReader.initialize(test);
 
                 // DataSet Iterator
-                DataSetIterator iterTest = new RecordReaderDataSetIterator(recordReader,batchSizePerWorker,1,
-                        outputNum);
+                DataSetIterator iterTest = getDataSetIterator("mnist_png/testing", rngseed, height, width,
+                        channels, batchSizePerWorker, outputNum);;
                 scaler.fit(iterTest);
                 iterTest.setPreProcessor(scaler);
-
-                /*
-                log the order of the labels for later use
-                In previous versions the label order was consistent, but random
-                In current verions label order is lexicographic
-                preserving the RecordReader Labels order is no
-                longer needed left in for demonstration
-                purposes
-                */
-                System.out.println(recordReader.getLabels().toString());
 
                 // Create Eval object with 10 possible classes
                 Evaluation eval = new Evaluation(outputNum);
