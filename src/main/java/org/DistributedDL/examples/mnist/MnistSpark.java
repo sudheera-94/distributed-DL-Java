@@ -91,28 +91,8 @@ public class MnistSpark {
 
         //Load the data into memory then parallelize
         //This isn't a good approach in general - but is simple to use for this example
-
-        // Creating DataSetIterators
-        DataSetIterator iterTrain = new MnistDataSetIterator(batchSizePerWorker, true, 12345);
-        DataSetIterator iterTest = new MnistDataSetIterator(batchSizePerWorker, true, 12345);
-
-        // Preparing training data
-            // Define the File Path
-//        File trainDataFiles = new File("mnist_png/training");
-//            // Define the FileSplit(PATH, ALLOWED FORMATS,random)
-//        FileSplit train = new FileSplit(trainDataFiles, NativeImageLoader.ALLOWED_FORMATS, randNumGen);
-//
-//            // Extract the parent path as the image label
-//        ParentPathLabelGenerator labelMaker = new ParentPathLabelGenerator();
-//        ImageRecordReader recordReader = new ImageRecordReader(height, width, channels, labelMaker);
-//
-//            // Initialize the record reader and iterator
-//        recordReader.initialize(train);
-//        DataSetIterator iterTrain = new RecordReaderDataSetIterator(recordReader,batchSizePerWorker,1,
-//                outputNum);
-
-//        DataSetIterator iterTrain = getDataSetIterator("mnist_png/training", rngseed, height, width, channels,
-//                batchSizePerWorker, outputNum);
+        DataSetIterator iterTrain = getDataSetIterator("mnist_png/training", rngseed, height, width, channels,
+                batchSizePerWorker, outputNum);
 
             // Scale pixel values to 0-1
         DataNormalization scaler = new ImagePreProcessingScaler(0,1);
@@ -150,8 +130,8 @@ public class MnistSpark {
         }
 
         // Test DataSet Iterator
-//        DataSetIterator iterTest = getDataSetIterator("mnist_png/testing", rngseed, height, width, channels,
-//                batchSizePerWorker, outputNum);
+        DataSetIterator iterTest = getDataSetIterator("mnist_png/testing", rngseed, height, width, channels,
+                batchSizePerWorker, outputNum);
         scaler.fit(iterTest);
         iterTest.setPreProcessor(scaler);
 
