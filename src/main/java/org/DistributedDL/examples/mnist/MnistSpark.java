@@ -22,12 +22,15 @@ import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 import org.deeplearning4j.nn.conf.Updater;
 import org.deeplearning4j.nn.conf.inputs.InputType;
 import org.deeplearning4j.nn.conf.layers.*;
+import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.nn.weights.WeightInit;
+import org.deeplearning4j.optimize.listeners.ScoreIterationListener;
 import org.deeplearning4j.spark.api.TrainingMaster;
 import org.deeplearning4j.spark.impl.multilayer.SparkDl4jMultiLayer;
 import org.deeplearning4j.spark.impl.paramavg.ParameterAveragingTrainingMaster;
 import org.deeplearning4j.ui.stats.StatsListener;
 import org.nd4j.linalg.activations.Activation;
+import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.DataSet;
 import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
 import org.nd4j.linalg.dataset.api.preprocessor.DataNormalization;
@@ -122,6 +125,7 @@ public class MnistSpark {
         // Integrating UI dashboard server
         StatsStorageRouter remoteUiRouter = new RemoteUIStatsStorageRouter("http://localhost:9000");
         sparkNet.setListeners(remoteUiRouter, Collections.singletonList(new StatsListener(null)));
+//        sparkNet.setListeners(new ScoreIterationListener(1));
 
         //Execute training:
         for (int i = 0; i < numEpochs; i++) {
@@ -135,17 +139,32 @@ public class MnistSpark {
         scaler.fit(iterTest);
         iterTest.setPreProcessor(scaler);
 
-            // Parallelize dataset
-        List<DataSet> testDataList = new ArrayList<>();
-        while (iterTest.hasNext()) {
-            testDataList.add(iterTest.next());
-        }
-        JavaRDD<DataSet> testData = sc.parallelize(testDataList);
+//        // Parallelize dataset
+//        List<DataSet> testDataList = new ArrayList<>();
+//        while (iterTest.hasNext()) {
+//            testDataList.add(iterTest.next());
+//        }
+//        JavaRDD<DataSet> testData = sc.parallelize(testDataList);
 
-        //Perform evaluation (distributed)
-        Evaluation evaluation = sparkNet.evaluate(testData);
-        log.info("***** Evaluation *****");
-        log.info(evaluation.stats());
+        // Create Eval object with 10 possible classes
+        Evaluation eval = new Evaluation(outputNum);
+        MultiLayerNetwork model = sparkNet.getNetwork();
+
+//        Evaluation evaluation = sparkNet.evaluate(testData);
+//        log.info("***** Evaluation *****");
+//        log.info(evaluation.stats());
+
+        // Evaluate the network
+        while(iterTest.hasNext()){
+            DataSet next = iterTest.next();
+            INDArray output = model.output(next.getFeatureMatrix());
+            // Compare the Feature Matrix from the model
+            // with the labels from the RecordReader
+            eval.eval(next.getLabels(),output);
+
+        }
+
+        System.out.println(eval.stats());
 
         //Delete the temp training files
         tm.deleteTempFiles(sc);
