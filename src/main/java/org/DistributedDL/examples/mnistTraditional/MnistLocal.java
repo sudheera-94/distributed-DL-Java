@@ -1,4 +1,4 @@
-package org.DistributedDL.examples.mnist;
+package org.DistributedDL.examples.mnistTraditional;
 
 import org.apache.log4j.BasicConfigurator;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
@@ -13,9 +13,12 @@ import org.nd4j.linalg.dataset.api.preprocessor.ImagePreProcessingScaler;
 
 import java.io.IOException;
 
-import static org.DistributedDL.examples.mnist.MnistSpark.getMnistNetwork;
-import static org.DistributedDL.examples.mnist.MnistSpark.getDataSetIterator;
+import static org.DistributedDL.examples.mnistTraditional.MnistSpark.getMnistNetwork;
+import static org.DistributedDL.examples.mnistTraditional.MnistSpark.getDataSetIterator;
 
+/**
+ * Trains a CNN using Mnist dataset locally. (without spark)
+ */
 public class MnistLocal {
 
     public static void main(String[] args) throws Exception{

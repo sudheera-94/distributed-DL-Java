@@ -1,4 +1,4 @@
-package org.DistributedDL.examples.mnist;
+package org.DistributedDL.examples.mnistTraditional;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
@@ -41,6 +41,10 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
+/**
+ * Trains a CNN using Mnist dataset In spark.
+ * Uses traditional distributed, synchronous method. (Parameter averaging)
+ */
 public class MnistSpark {
 
     private static final Logger log = LoggerFactory.getLogger(MnistSpark.class);
@@ -57,7 +61,6 @@ public class MnistSpark {
     @Parameter(names = "-avgFreq", description = "Number of iterations per exploration step")
     private int avgFreq = 10;
 
-    // Main function of the class
     public static void main(String[] args) throws Exception {
         BasicConfigurator.configure(); // To configure logging
         new MnistSpark().entryPoint(args);
@@ -77,7 +80,10 @@ public class MnistSpark {
         } catch (ParameterException e) {
             //User provides invalid input -> print the usage info
             jcmdr.usage();
-            try { Thread.sleep(500); } catch (Exception e2) { }
+            try {
+                Thread.sleep(500);
+            } catch (Exception e2) {
+            }
             throw e;
         }
 
@@ -94,12 +100,12 @@ public class MnistSpark {
         DataSetIterator iterTrain = getDataSetIterator("mnist_png/training", rngseed, height, width, channels,
                 batchSizePerWorker, outputNum);
 
-            // Scale pixel values to 0-1
-        DataNormalization scaler = new ImagePreProcessingScaler(0,1);
+        // Scale pixel values to 0-1
+        DataNormalization scaler = new ImagePreProcessingScaler(0, 1);
         scaler.fit(iterTrain);
         iterTrain.setPreProcessor(scaler);
 
-            // Parallelize dataset
+        // Parallelize dataset
         List<DataSet> trainDataList = new ArrayList<>();
         while (iterTrain.hasNext()) {
             trainDataList.add(iterTrain.next());
@@ -114,7 +120,7 @@ public class MnistSpark {
                 //Each DataSet object: contains (by default) 16 examples
                 .averagingFrequency(avgFreq)            // Number of iterations per exploration stage
                 .workerPrefetchNumBatches(2)            // Number of minibatches to asynchronously
-                                                            // prefetch on each worker when training.
+                // prefetch on each worker when training.
                 .batchSizePerWorker(batchSizePerWorker) // Number of examples per user per fit
                 .build();
 
@@ -144,12 +150,12 @@ public class MnistSpark {
         MultiLayerNetwork model = sparkNet.getNetwork();
 
         // Evaluate the network
-        while(iterTest.hasNext()){
+        while (iterTest.hasNext()) {
             DataSet next = iterTest.next();
             INDArray output = model.output(next.getFeatureMatrix());
             // Compare the Feature Matrix from the model
             // with the labels from the RecordReader
-            eval.eval(next.getLabels(),output);
+            eval.eval(next.getLabels(), output);
         }
         log.info("***** Evaluation *****");
         log.info(eval.stats());
@@ -161,6 +167,12 @@ public class MnistSpark {
     }
 
     // Function to give the network architecture
+
+    /**
+     * Creates CNN configuration.
+     *
+     * @return MultiLayerConfiguration type CNN configuration
+     */
     public static MultiLayerConfiguration getMnistNetwork() {
 
         int iterations = 1; // Number of training iterations
@@ -211,8 +223,8 @@ public class MnistSpark {
                         .activation(Activation.IDENTITY)
                         .build())
                 .layer(1, new SubsamplingLayer.Builder(SubsamplingLayer.PoolingType.MAX)
-                        .kernelSize(2,2)
-                        .stride(2,2)
+                        .kernelSize(2, 2)
+                        .stride(2, 2)
                         .build())
                 .layer(2, new ConvolutionLayer.Builder(5, 5)
                         //Note that nIn need not be specified in later layers
@@ -221,8 +233,8 @@ public class MnistSpark {
                         .activation(Activation.IDENTITY)
                         .build())
                 .layer(3, new SubsamplingLayer.Builder(SubsamplingLayer.PoolingType.MAX)
-                        .kernelSize(2,2)
-                        .stride(2,2)
+                        .kernelSize(2, 2)
+                        .stride(2, 2)
                         .build())
                 .layer(4, new DenseLayer.Builder().activation(Activation.RELU)
                         .nOut(500).build())
@@ -230,26 +242,25 @@ public class MnistSpark {
                         .nOut(outputNum)
                         .activation(Activation.SOFTMAX)
                         .build())
-                .setInputType(InputType.convolutionalFlat(28,28,1)) //See note below
+                .setInputType(InputType.convolutionalFlat(28, 28, 1)) //See note below
                 .backprop(true).pretrain(false).build();
 
         return conf;
     }
 
-    // Function to load data
-    /*
-    * Inputs :-
-    *   path      - Path to find dataset (One mail folder -> In it folder for each class. Folder name = class name)
-    *   rngseed   - Random seed
-    *   height    - Image height
-    *   width     - Image width
-    *   channels  - Number of channels in an image
-    *   batchSize - Batch size per worker
-    *   outputNum - Number of classes
-    *
-    * Output :-
-    *   DataSetIterator. Each image labeled according to the parent folder name.
-    */
+    /**
+     * Loads data from a given path
+     *
+     * @param path      Path to find dataset (One main folder -> In it, folder for each class. Folder name = class name)
+     * @param rngseed   Random seed
+     * @param height    Image height
+     * @param width     Image width
+     * @param channels  Number of channels in an image
+     * @param batchSize Batch size per worker
+     * @param outputNum Number of classes
+     * @return DataSetIterator. Each image labeled according to the parent folder name.
+     * @throws IOException
+     */
     public static DataSetIterator getDataSetIterator(String path, int rngseed, int height, int width, int channels,
                                                      int batchSize, int outputNum)
             throws IOException {

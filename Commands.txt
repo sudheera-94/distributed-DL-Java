@@ -11,7 +11,7 @@ to run the jar locally :-
 
     cd /home/sudheera/Documents/MSc/final_project/distributed_dl/target
 
-    spark-submit --class org.DistributedDL.examples.mnist.MnistSpark --master spark://CampNou:7077 --num-executors 2 --executor-memory 1g \
+    spark-submit --class org.DistributedDL.examples.mnistTraditional.MnistSpark --master spark://CampNou:7077 --num-executors 2 --executor-memory 1g \
     --conf spark.driver.memoryOverhead=1g --conf spark.executor.memoryOverhead=1g \
     --driver-memory 4g distributed_dl-1.0-SNAPSHOT-bin.jar
 
@@ -24,7 +24,7 @@ Dashboard :-
 Run jar in AWS :-
     gzip -k distributed_dl-1.0-SNAPSHOT-bin.jar
     cd /home/sudheera/Documents/MSc/final_project/s3_upload_jar
-    mv /home/sudheera/Documents/MSc/final_project/dl4j_test_scripts/target/distributed_dl-1.0-SNAPSHOT-bin.jar.gz .
+    mv /home/sudheera/Documents/MSc/final_project/distributed_dl/target/distributed_dl-1.0-SNAPSHOT-bin.jar.gz .
 
     Upload the jar into s3 bucket :-
         from here referred :- https://www.jtouzi.net/uploading-a-large-file-to-amazon-web-services-s3/
@@ -87,7 +87,7 @@ Run jar in AWS :-
     --deploy-mode cluster distributed_dl-1.0-SNAPSHOT-bin.jar --avgFreq 10 \
     --dataPath s3://dl4jcifar10/
 
-    spark-submit --class org.DistributedDL.examples.mnist.MnistSpark --master yarn --num-executors 2 --executor-cores 2 \
+    spark-submit --class org.DistributedDL.examples.mnistTraditional.MnistSpark --master yarn --num-executors 2 --executor-cores 2 \
     --executor-memory 1g --conf spark.driver.memoryOverhead=1g --conf spark.executor.memoryOverhead=1g \
     --deploy-mode cluster distributed_dl-1.0-SNAPSHOT-bin.jar
 
