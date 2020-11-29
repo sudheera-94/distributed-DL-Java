@@ -1,12 +1,6 @@
 package org.DistributedDL.examples.mnist;
 
 import org.apache.log4j.BasicConfigurator;
-import org.datavec.api.io.labels.ParentPathLabelGenerator;
-import org.datavec.api.split.FileSplit;
-import org.datavec.image.loader.NativeImageLoader;
-import org.datavec.image.recordreader.ImageRecordReader;
-import org.deeplearning4j.datasets.datavec.RecordReaderDataSetIterator;
-import org.deeplearning4j.datasets.iterator.impl.MnistDataSetIterator;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.optimize.listeners.ScoreIterationListener;
@@ -17,9 +11,7 @@ import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
 import org.nd4j.linalg.dataset.api.preprocessor.DataNormalization;
 import org.nd4j.linalg.dataset.api.preprocessor.ImagePreProcessingScaler;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.Random;
 
 import static org.DistributedDL.examples.mnist.MnistSpark.getMnistNetwork;
 import static org.DistributedDL.examples.mnist.MnistSpark.getDataSetIterator;
@@ -28,8 +20,6 @@ public class MnistLocal {
 
     public static void main(String[] args) throws Exception{
         BasicConfigurator.configure();
-
-        File trainData;
 
         {
             try {
@@ -41,12 +31,11 @@ public class MnistLocal {
                 int channels = 1;
                 int outputNum = 10;
                 int rngseed = 123;
-                Random randNumGen = new Random(rngseed);
 
-                // Loading data and Visualization
+                // Loading training data
                 System.out.println("Data load and vectorization...");
 
-                // Initialize the record reader and iterator
+                // Initialize the training set iterator
                 DataSetIterator trainIter = getDataSetIterator("mnist_png/training", rngseed, height, width,
                         channels, batchSizePerWorker, outputNum);
 
@@ -57,11 +46,11 @@ public class MnistLocal {
 
                 // Network configuration
                 MultiLayerConfiguration conf = getMnistNetwork();
-
                 MultiLayerNetwork model = new MultiLayerNetwork(conf);
                 model.init();
                 model.setListeners(new ScoreIterationListener(100));
 
+                // Training the network
                 for (int i = 0; i < numEpochs; i++){
                     model.fit(trainIter);
                     System.out.println("*** Completed epoch " + i + " ***");
@@ -69,7 +58,7 @@ public class MnistLocal {
 
                 System.out.println("******EVALUATE MODEL******");
 
-                // DataSet Iterator
+                // Initialize the testing set iterator
                 DataSetIterator iterTest = getDataSetIterator("mnist_png/testing", rngseed, height, width,
                         channels, batchSizePerWorker, outputNum);;
                 scaler.fit(iterTest);
@@ -78,7 +67,6 @@ public class MnistLocal {
                 // Create Eval object with 10 possible classes
                 Evaluation eval = new Evaluation(outputNum);
 
-
                 // Evaluate the network
                 while(iterTest.hasNext()){
                     DataSet next = iterTest.next();
@@ -86,7 +74,6 @@ public class MnistLocal {
                     // Compare the Feature Matrix from the model
                     // with the labels from the RecordReader
                     eval.eval(next.getLabels(),output);
-
                 }
 
                 System.out.println(eval.stats());
