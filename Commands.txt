@@ -8,36 +8,38 @@ to build a jar :-
 to run the jar locally :-
     start-master.sh
     start-slave.sh spark://CampNou:7077
-    start-slave.sh spark://CampNou:7077
 
-    cd /home/sudheera/Documents/MSc/final_project/dl4j_test_scripts/target
+    cd /home/sudheera/Documents/MSc/final_project/distributed_dl/target
 
-    spark-submit --class org.DistributedDL.examples.mnist.MnistSpark --master spark://CampNou:7077 --num-executors 2 --executor-memory 1g \
+    spark-submit --class org.DistributedDL.examples.mnistTraditional.MnistSpark --master spark://CampNou:7077 --num-executors 2 --executor-memory 1g \
     --conf spark.driver.memoryOverhead=1g --conf spark.executor.memoryOverhead=1g \
-    --driver-memory 4g dl4j_test_scripts-1.0-SNAPSHOT-bin.jar
+    --driver-memory 4g distributed_dl-1.0-SNAPSHOT-bin.jar
 
     stop-slave.sh spark://CampNou:7077
     stop-master.sh
 
+Dashboard :-
+    http://localhost:9000/train
+
 Run jar in AWS :-
-    gzip -k dl4j_test_scripts-1.0-SNAPSHOT-bin.jar
+    gzip -k distributed_dl-1.0-SNAPSHOT-bin.jar
     cd /home/sudheera/Documents/MSc/final_project/s3_upload_jar
-    mv /home/sudheera/Documents/MSc/final_project/dl4j_test_scripts/target/dl4j_test_scripts-1.0-SNAPSHOT-bin.jar.gz .
+    mv /home/sudheera/Documents/MSc/final_project/distributed_dl/target/distributed_dl-1.0-SNAPSHOT-bin.jar.gz .
 
     Upload the jar into s3 bucket :-
         from here referred :- https://www.jtouzi.net/uploading-a-large-file-to-amazon-web-services-s3/
 
-        for i in {1..15}; do dd if=dl4j_test_scripts-1.0-SNAPSHOT-bin.jar.gz of=dl4j_test_scripts-1.0-SNAPSHOT-bin.jar"$i".gz \
+        for i in {1..15}; do dd if=dl4j_test_scripts-1.0-SNAPSHOT-bin.jar.gz of=distributed_dl-1.0-SNAPSHOT-bin.jar"$i".gz \
         bs=1024k skip=$[i*50 - 50] count=50; done
 
-        rm dl4j_test_scripts-1.0-SNAPSHOT-bin.jar.gz
+        rm distributed_dl-1.0-SNAPSHOT-bin.jar.gz
 
-        aws s3api create-multipart-upload --bucket dl4j --key dl4j_test_scripts-1.0-SNAPSHOT-bin.jar.gz
+        aws s3api create-multipart-upload --bucket dl4j --key distributed_dl-1.0-SNAPSHOT-bin.jar.gz
             <--Note UploadId from the json output = "MyLongUploadId"-->
 
-        for i in {1..15}; do aws s3api upload-part --bucket dl4j --key dl4j_test_scripts-1.0-SNAPSHOT-bin.jar.gz \
+        for i in {1..15}; do aws s3api upload-part --bucket dl4j --key distributed_dl-1.0-SNAPSHOT-bin.jar.gz \
         --upload-id <--MyLongUploadId--> \
-        --part-number $[i] --body dl4j_test_scripts-1.0-SNAPSHOT-bin.jar"$i".gz; done
+        --part-number $[i] --body distributed_dl-1.0-SNAPSHOT-bin.jar"$i".gz; done
                 <--Copy ETag values of each partition into a text file-->
 
         Create a JSON file MyMultiPartUpload.json containing the following:
@@ -53,7 +55,7 @@ Run jar in AWS :-
             }
 
         aws s3api complete-multipart-upload --bucket dl4j \
-        --key dl4j_test_scripts-1.0-SNAPSHOT-bin.jar.gz \
+        --key distributed_dl-1.0-SNAPSHOT-bin.jar.gz \
         --upload-id MyLongUploadId \
         --multipart-upload file://MyMultiPartUpload.json
 
@@ -71,23 +73,23 @@ Run jar in AWS :-
     spark submit command :-
 
         ssh -i iit-lab-key-pair.pem <--hadoop@ec2-3-139-102-224.us-east-2.compute.amazonaws.com-->
-        aws s3 cp s3://dl4j/dl4j_test_scripts-1.0-SNAPSHOT-bin.jar.gz .
-        gzip -d dl4j_test_scripts-1.0-SNAPSHOT-bin.jar.gz
+        aws s3 cp s3://dl4j/distributed_dl-1.0-SNAPSHOT-bin.jar.gz .
+        gzip -d distributed_dl-1.0-SNAPSHOT-bin.jar.gz
 
         <-- Running pre-processor Jar :-
 
         mkdir Cifar10
-        java -cp dl4j_test_scripts-1.0-SNAPSHOT-bin-1.0-SNAPSHOT-bin.jar cifar10.PreprocessLocal --localSaveDir /home/hadoop/Cifar10
+        java -cp distributed_dl-1.0-SNAPSHOT-bin.jar cifar10.PreprocessLocal --localSaveDir /home/hadoop/Cifar10
         aws s3 cp --recursive /home/hadoop/Cifar10 s3://dl4jcifar10/ -> put Cifar10 data into S3
 
     spark-submit --class cifar10.TrainSparkCifar10 --master yarn --num-executors 2 --executor-cores 2 \
     --executor-memory 1g --conf spark.driver.memoryOverhead=1g --conf spark.executor.memoryOverhead=1g \
-    --deploy-mode cluster dl4j_test_scripts-1.0-SNAPSHOT-bin.jar --avgFreq 10 \
+    --deploy-mode cluster distributed_dl-1.0-SNAPSHOT-bin.jar --avgFreq 10 \
     --dataPath s3://dl4jcifar10/
 
-    spark-submit --class org.DistributedDL.examples.mnist.MnistSpark --master yarn --num-executors 2 --executor-cores 2 \
+    spark-submit --class org.DistributedDL.examples.mnistTraditional.MnistSpark --master yarn --num-executors 2 --executor-cores 2 \
     --executor-memory 1g --conf spark.driver.memoryOverhead=1g --conf spark.executor.memoryOverhead=1g \
-    --deploy-mode cluster dl4j_test_scripts-1.0-SNAPSHOT-bin.jar
+    --deploy-mode cluster distributed_dl-1.0-SNAPSHOT-bin.jar
 
     Clean up :-
         delete S3 bucket
