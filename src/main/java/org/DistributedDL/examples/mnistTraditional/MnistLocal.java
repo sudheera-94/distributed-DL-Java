@@ -1,10 +1,18 @@
 package org.DistributedDL.examples.mnistTraditional;
 
 import org.apache.log4j.BasicConfigurator;
+import org.deeplearning4j.api.storage.StatsStorage;
+import org.deeplearning4j.eval.IEvaluation;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
+import org.deeplearning4j.optimize.api.InvocationType;
+import org.deeplearning4j.optimize.listeners.EvaluativeListener;
 import org.deeplearning4j.optimize.listeners.ScoreIterationListener;
 import org.deeplearning4j.eval.Evaluation;
+import org.deeplearning4j.optimize.listeners.callbacks.EvaluationCallback;
+import org.deeplearning4j.ui.api.UIServer;
+import org.deeplearning4j.ui.stats.StatsListener;
+import org.deeplearning4j.ui.storage.InMemoryStatsStorage;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.DataSet;
 import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
@@ -13,7 +21,9 @@ import org.nd4j.linalg.dataset.api.preprocessor.ImagePreProcessingScaler;
 
 import java.io.IOException;
 
-import static org.DistributedDL.examples.mnistTraditional.MnistSpark.getMnistNetwork;
+import org.DistributedDL.StandardArchitectures.LeNet5Architecture;
+import org.springframework.ui.Model;
+
 import static org.DistributedDL.examples.mnistTraditional.MnistSpark.getDataSetIterator;
 
 /**
@@ -21,70 +31,80 @@ import static org.DistributedDL.examples.mnistTraditional.MnistSpark.getDataSetI
  */
 public class MnistLocal {
 
-    public static void main(String[] args) throws Exception{
+    public static void main(String[] args) throws Exception {
         BasicConfigurator.configure();
 
-        {
-            try {
+        int batchSize = 64;
+        int numEpochs = 1;
+        int height = 28;
+        int width = 28;
+        int channels = 1;
+        int outputNum = 10;
+        int rngseed = 123;
 
-                int batchSizePerWorker = 16;
-                int numEpochs = 1;
-                int height = 28;
-                int width = 28;
-                int channels = 1;
-                int outputNum = 10;
-                int rngseed = 123;
+        // Loading training data
+        System.out.println("Data load and vectorization...");
 
-                // Loading training data
-                System.out.println("Data load and vectorization...");
+        // Initialize the training set iterator
+        DataSetIterator trainIter = getDataSetIterator("mnist_png/training", rngseed, height, width,
+                channels, batchSize, outputNum);
 
-                // Initialize the training set iterator
-                DataSetIterator trainIter = getDataSetIterator("mnist_png/training", rngseed, height, width,
-                        channels, batchSizePerWorker, outputNum);
+        // Pixel values from 0-255 to 0-1 (min-max scaling)
+        DataNormalization scaler = new ImagePreProcessingScaler(0, 1);
+        scaler.fit(trainIter);
+        trainIter.setPreProcessor(scaler);
 
-                // Pixel values from 0-255 to 0-1 (min-max scaling)
-                DataNormalization scaler = new ImagePreProcessingScaler(0, 1);
-                scaler.fit(trainIter);
-                trainIter.setPreProcessor(scaler);
+        // Initialize the testing set iterator
+        DataSetIterator iterTest = getDataSetIterator("mnist_png/testing", rngseed, height, width,
+                channels, batchSize, outputNum);
+        ;
+        scaler.fit(iterTest);
+        iterTest.setPreProcessor(scaler);
 
-                // Network configuration
-                MultiLayerConfiguration conf = getMnistNetwork();
-                MultiLayerNetwork model = new MultiLayerNetwork(conf);
-                model.init();
-                model.setListeners(new ScoreIterationListener(100));
+        //Initialize the user interface backend
+        UIServer uiServer = UIServer.getInstance();
 
-                // Training the network
-                for (int i = 0; i < numEpochs; i++){
-                    model.fit(trainIter);
-                    System.out.println("*** Completed epoch " + i + " ***");
-                }
+        //Configure where the network information (gradients, activations, score vs. time etc) is to be stored
+        //Then add the StatsListener to collect this information from the network, as it trains
+        StatsStorage statsStorage = new InMemoryStatsStorage();   //Alternative: new FileStatsStorage(File) - see UIStorageExample
+        int listenerFrequency = 1;
 
-                System.out.println("******EVALUATE MODEL******");
+        // Network configuration
+        LeNet5Architecture leNet5 = new LeNet5Architecture();
+        MultiLayerConfiguration conf = leNet5.getArchitecture();
 
-                // Initialize the testing set iterator
-                DataSetIterator iterTest = getDataSetIterator("mnist_png/testing", rngseed, height, width,
-                        channels, batchSizePerWorker, outputNum);;
-                scaler.fit(iterTest);
-                iterTest.setPreProcessor(scaler);
+        MultiLayerNetwork model = new MultiLayerNetwork(conf);
+        model.init();
+        model.setListeners(new EvaluativeListener(iterTest, 100),
+                new StatsListener(statsStorage, listenerFrequency));
 
-                // Create Eval object with 10 possible classes
-                Evaluation eval = new Evaluation(outputNum);
+        //Attach the StatsStorage instance to the UI: this allows the contents of the StatsStorage
+        // to be visualized
+        uiServer.attach(statsStorage);
 
-                // Evaluate the network
-                while(iterTest.hasNext()){
-                    DataSet next = iterTest.next();
-                    INDArray output = model.output(next.getFeatureMatrix());
-                    // Compare the Feature Matrix from the model
-                    // with the labels from the RecordReader
-                    eval.eval(next.getLabels(),output);
-                }
-
-                System.out.println(eval.stats());
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+        // Training the network
+        for (int i = 0; i < numEpochs; i++) {
+            model.fit(trainIter);
+            System.out.println("*** Completed epoch " + i + " ***");
         }
+
+//        System.out.println("******EVALUATE MODEL******");
+//
+//        // Create Eval object with 10 possible classes
+//        Evaluation eval = new Evaluation(outputNum);
+//        iterTest.reset();
+//
+//        // Evaluate the network
+//        while (iterTest.hasNext()) {
+//            DataSet next = iterTest.next();
+//            INDArray output = model.output(next.getFeatureMatrix());
+//            // Compare the Feature Matrix from the model
+//            // with the labels from the RecordReader
+//            eval.eval(next.getLabels(), output);
+//        }
+//
+//        System.out.println(eval.stats());
+//        System.out.println(eval.confusionToString());
 
     }
 
