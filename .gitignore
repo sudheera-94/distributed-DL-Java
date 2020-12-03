@@ -16,3 +16,4 @@ test-logs
 /src/main/resources/
 /out/
 /mnist_png/
+/EvaluativeListenerAccuracyArray.json

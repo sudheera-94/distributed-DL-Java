@@ -34,7 +34,6 @@ public class LeNet5Architecture extends BaseArchitecture {
                 .lrPolicyDecayRate(0.0005d)
                 .weightInit(WeightInit.XAVIER)
                 .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
-                .updater(new Nesterovs(0.0d))
                 .list()
                 .layer(0, new ConvolutionLayer.Builder(5, 5)
                         // nIn and nOut specify depth. nIn here is the nChannels and
