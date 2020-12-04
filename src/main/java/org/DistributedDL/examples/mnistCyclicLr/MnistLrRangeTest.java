@@ -32,13 +32,13 @@ public class MnistLrRangeTest {
         BasicConfigurator.configure();
 
         int batchSize = 64;
-        int numEpochs = 1;
+        int numEpochs = 4;
         int height = 28;
         int width = 28;
         int channels = 1;
         int outputNum = 10;
         int rngseed = 123;
-        int evaluationListenerFreq = 200;
+        int evaluationListenerFreq = 10;
 
         // Loading training data
         System.out.println("Data load and vectorization...");
@@ -67,7 +67,8 @@ public class MnistLrRangeTest {
         int listenerFrequency = 1;
 
         // Network configuration
-        MnistLrRangeTestTrainingConfig leNetLrRangeTestConfig = new MnistLrRangeTestTrainingConfig(batchSize);
+        MnistLrRangeTestTrainingConfig leNetLrRangeTestConfig =
+                new MnistLrRangeTestTrainingConfig(batchSize, numEpochs);
         MultiLayerConfiguration conf = leNetLrRangeTestConfig.getArchitecture();
 
         MultiLayerNetwork model = new MultiLayerNetwork(conf);
@@ -123,23 +124,23 @@ public class MnistLrRangeTest {
             e.printStackTrace();
         }
 
-        System.out.println("******EVALUATE MODEL******");
+//        System.out.println("******EVALUATE MODEL******");
 
         // Create Eval object with 10 possible classes
-        Evaluation eval = new Evaluation(outputNum);
-        iterTest.reset();
+//        Evaluation eval = new Evaluation(outputNum);
+//        iterTest.reset();
 
         // Evaluate the network
-        while (iterTest.hasNext()) {
-            DataSet next = iterTest.next();
-            INDArray output = model.output(next.getFeatureMatrix());
+//        while (iterTest.hasNext()) {
+//            DataSet next = iterTest.next();
+//            INDArray output = model.output(next.getFeatureMatrix());
             // Compare the Feature Matrix from the model
             // with the labels from the RecordReader
-            eval.eval(next.getLabels(), output);
-        }
+//            eval.eval(next.getLabels(), output);
+//        }
 
-        System.out.println(eval.stats());
-        System.out.println(eval.confusionToString());
+//        System.out.println(eval.stats());
+//        System.out.println(eval.confusionToString());
 
     }
 

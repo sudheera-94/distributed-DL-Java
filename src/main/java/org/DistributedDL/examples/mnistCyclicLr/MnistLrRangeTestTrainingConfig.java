@@ -39,12 +39,9 @@ public class MnistLrRangeTestTrainingConfig {
     }
 
     // Constructors
-    public MnistLrRangeTestTrainingConfig(int batchSize) {
-        this.batchSize = batchSize;
-    }
 
     public MnistLrRangeTestTrainingConfig(int batchSize, int rangeTestEpochCount) {
-        this(batchSize);
+        this.batchSize = batchSize;
         this.rangeTestEpochCount = rangeTestEpochCount;
     }
 
