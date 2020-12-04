@@ -1,4 +1,7 @@
-package org.DistributedDL.StandardArchitectures;
+package org.DistributedDL.examples.mnistCyclicLr;
+
+import org.DistributedDL.StandardArchitectures.LeNet5Architecture;
+import org.DistributedDL.CyclicLr.lrRangeTestScheduleGenerator;
 
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
 import org.deeplearning4j.nn.conf.LearningRatePolicy;
@@ -14,18 +17,62 @@ import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.learning.config.Nesterovs;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 
-public class LeNet5Architecture extends BaseArchitecture {
+import java.util.Map;
 
-    private static int iterations = 1; // Number of training iterations
-    private static int nChannels = 1; // Number of input channels
-    private static int outputNum = 10; // The number of possible outcomes
-    private static int trainSize = 60000; // Size of the training set
+public class MnistLrRangeTestTrainingConfig {
 
-    public static int getTrainSize() {
-        return trainSize;
+    private int rangeTestEpochCount = 4;
+    private double maxLr = 0.02;
+    private int batchSize = 64;
+    private Map<Integer, Double> lrSchedule;
+
+    public Map<Integer, Double> getLrSchedule() {
+        return lrSchedule;
     }
 
-    public static MultiLayerConfiguration getArchitecture() {
+    public int getRangeTestEpochCount() {
+        return rangeTestEpochCount;
+    }
+
+    public void setRangeTestEpochCount(int rangeTestEpochCount) {
+        this.rangeTestEpochCount = rangeTestEpochCount;
+    }
+
+    // Constructors
+    public MnistLrRangeTestTrainingConfig(int batchSize) {
+        this.batchSize = batchSize;
+    }
+
+    public MnistLrRangeTestTrainingConfig(int batchSize, int rangeTestEpochCount) {
+        this(batchSize);
+        this.rangeTestEpochCount = rangeTestEpochCount;
+    }
+
+    public MnistLrRangeTestTrainingConfig(int batchSize, int rangeTestEpochCount, double maxLr) {
+        this(batchSize, rangeTestEpochCount);
+        this.maxLr = maxLr;
+    }
+
+    // Other Methods
+    public MultiLayerConfiguration getArchitecture() {
+
+        // Getting the default architecture
+//        LeNet5Architecture leNet5 = new LeNet5Architecture();
+//        MultiLayerConfiguration conf = leNet5.getArchitecture();
+
+        // Doing Modifications
+//        List<NeuralNetConfiguration> confList = new ArrayList<NeuralNetConfiguration>();
+//        NeuralNetConfiguration confItem = new NeuralNetConfiguration();
+//        confItem.setLearningRateByParam("newLr", 0.03d);
+//        confList.add(confItem);
+
+        // Passing the new configuration
+//        conf.setConfs(confList);
+
+        int iterations = 1; // Number of training iterations
+        int nChannels = 1; // Number of input channels
+        int outputNum = 10; // The number of possible outcomes
+        this.setLrSchedule();
 
         MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
                 .seed(123)
@@ -37,10 +84,8 @@ public class LeNet5Architecture extends BaseArchitecture {
                 .updater(new Nesterovs(0.9d))
                 .l2(0.0005d)
 
-                // The learning rate policy
-                .learningRateDecayPolicy(LearningRatePolicy.Inverse)
-                .lrPolicyDecayRate(0.0001d)
-                .lrPolicyPower(0.75d)
+                .learningRateDecayPolicy(LearningRatePolicy.Schedule)
+                .learningRateSchedule(lrSchedule)
 
                 .weightInit(WeightInit.XAVIER)
                 .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
@@ -81,6 +126,15 @@ public class LeNet5Architecture extends BaseArchitecture {
                 .backprop(true).pretrain(false).build();
 
         return conf;
+
+    }
+
+    private void setLrSchedule() {
+
+        Map<Integer, Double> lrScheduleNew =
+                lrRangeTestScheduleGenerator.getSchedule(this.maxLr, LeNet5Architecture.getTrainSize(),
+                        this.batchSize, this.rangeTestEpochCount);
+        this.lrSchedule = lrScheduleNew;
 
     }
 
