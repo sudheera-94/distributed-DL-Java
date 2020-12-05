@@ -17,3 +17,4 @@ test-logs
 /out/
 /mnist_png/
 /EvaluativeListenerAccuracyArray.json
+/cifar10_png/

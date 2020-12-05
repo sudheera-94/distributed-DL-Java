@@ -76,8 +76,8 @@ public class MnistLrRangeTestTrainingConfig {
                 .iterations(iterations)     // Training iterations per minibatch
 
                 // The base learning rate, momentum and the weight decay of the network.
-                .learningRate(0.01d)        // Learning rate
-                .biasLearningRate(0.02d)
+                .learningRate(0.0001d)        // Learning rate
+                .biasLearningRate(0.0002d)
                 .updater(new Nesterovs(0.9d))
                 .l2(0.0005d)
 
@@ -129,7 +129,7 @@ public class MnistLrRangeTestTrainingConfig {
     private void setLrSchedule() {
 
         Map<Integer, Double> lrScheduleNew =
-                lrRangeTestScheduleGenerator.getSchedule(this.maxLr, LeNet5Architecture.getTrainSize(),
+                lrRangeTestScheduleGenerator.getSchedule(this.maxLr, 60000,
                         this.batchSize, this.rangeTestEpochCount);
         this.lrSchedule = lrScheduleNew;
 

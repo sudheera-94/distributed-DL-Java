@@ -28,7 +28,7 @@ public class Cifar10LrRangeTest {
         BasicConfigurator.configure();
 
         int batchSize = 100;
-        int numEpochs = 1;
+        int numEpochs = 4;
         int height = 32;
         int width = 32;
         int channels = 3;
