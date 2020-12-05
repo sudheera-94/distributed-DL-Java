@@ -1,9 +1,7 @@
-package org.DistributedDL.examples.mnistCyclicLr;
+package org.DistributedDL.examples.mnist.mnistCyclicLr;
 
-import org.DistributedDL.StandardArchitectures.LeNet5Architecture;
 import org.apache.log4j.BasicConfigurator;
 import org.deeplearning4j.api.storage.StatsStorage;
-import org.deeplearning4j.eval.Evaluation;
 import org.deeplearning4j.eval.IEvaluation;
 import org.deeplearning4j.nn.api.Model;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
@@ -15,8 +13,6 @@ import org.deeplearning4j.ui.stats.StatsListener;
 import org.deeplearning4j.ui.storage.InMemoryStatsStorage;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.dataset.DataSet;
 import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
 import org.nd4j.linalg.dataset.api.preprocessor.DataNormalization;
 import org.nd4j.linalg.dataset.api.preprocessor.ImagePreProcessingScaler;
@@ -24,7 +20,7 @@ import org.nd4j.linalg.dataset.api.preprocessor.ImagePreProcessingScaler;
 import java.io.FileWriter;
 import java.io.IOException;
 
-import static org.DistributedDL.examples.mnistTraditional.MnistSpark.getDataSetIterator;
+import static org.DistributedDL.examples.mnist.mnistTraditional.MnistSpark.getDataSetIterator;
 
 public class MnistLrRangeTest {
 
@@ -123,24 +119,6 @@ public class MnistLrRangeTest {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-//        System.out.println("******EVALUATE MODEL******");
-
-        // Create Eval object with 10 possible classes
-//        Evaluation eval = new Evaluation(outputNum);
-//        iterTest.reset();
-
-        // Evaluate the network
-//        while (iterTest.hasNext()) {
-//            DataSet next = iterTest.next();
-//            INDArray output = model.output(next.getFeatureMatrix());
-            // Compare the Feature Matrix from the model
-            // with the labels from the RecordReader
-//            eval.eval(next.getLabels(), output);
-//        }
-
-//        System.out.println(eval.stats());
-//        System.out.println(eval.confusionToString());
 
     }
 

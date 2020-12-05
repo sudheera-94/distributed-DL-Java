@@ -1,4 +1,4 @@
-package org.DistributedDL.examples.mnistTraditional;
+package org.DistributedDL.examples.mnist.mnistTraditional;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;

@@ -1,4 +1,4 @@
-package org.DistributedDL.examples.mnistTraditional;
+package org.DistributedDL.examples.mnist.mnistTraditional;
 
 import org.apache.log4j.BasicConfigurator;
 import org.deeplearning4j.api.storage.StatsStorage;
@@ -16,7 +16,7 @@ import org.nd4j.linalg.dataset.api.preprocessor.ImagePreProcessingScaler;
 
 import org.DistributedDL.StandardArchitectures.LeNet5Architecture;
 
-import static org.DistributedDL.examples.mnistTraditional.MnistSpark.getDataSetIterator;
+import static org.DistributedDL.examples.mnist.mnistTraditional.MnistSpark.getDataSetIterator;
 
 /**
  * Trains a CNN using Mnist dataset locally. (without spark)

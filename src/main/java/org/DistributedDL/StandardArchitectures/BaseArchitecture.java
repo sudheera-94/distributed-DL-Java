@@ -1,32 +1,54 @@
 package org.DistributedDL.StandardArchitectures;
 
-public abstract class BaseArchitecture {
+public class BaseArchitecture {
 
-    private int iterations = 1;
-    private int nChannels = 1;
-    private int nClasses = 10;
+    private static int iterations = 1; // Number of training iterations
+    private static int nChannels;  // Number of input channels
+    private static int nClasses;  // The number of possible outcomes
+    private static int trainSize;      // Size of the training set
 
-    public int getIterations() {
-        return iterations;
+    // Constructors
+    public BaseArchitecture(int nChannels, int nClasses, int trainSize){
+        this.trainSize = trainSize;
+        this.nChannels = nChannels;
+        this.nClasses = nClasses;
     }
 
-    public void setIterations(int iterations) {
+    public BaseArchitecture(int iterations, int nChannels, int nClasses, int trainSize){
+        this(nChannels, nClasses, trainSize);
         this.iterations = iterations;
     }
 
-    public int getnChannels() {
+    // Getters and setters
+    public static int getIterations() {
+        return iterations;
+    }
+
+    public static void setIterations(int iterations) {
+        BaseArchitecture.iterations = iterations;
+    }
+
+    public static int getnChannels() {
         return nChannels;
     }
 
-    public void setnChannels(int nChannels) {
-        this.nChannels = nChannels;
+    public static void setnChannels(int nChannels) {
+        BaseArchitecture.nChannels = nChannels;
     }
 
-    public int getnClasses() {
+    public static int getnClasses() {
         return nClasses;
     }
 
-    public void setnClasses(int nClasses) {
-        this.nClasses = nClasses;
+    public static void setnClasses(int nClasses) {
+        BaseArchitecture.nClasses = nClasses;
+    }
+
+    public static int getTrainSize() {
+        return trainSize;
+    }
+
+    public static void setTrainSize(int trainSize) {
+        BaseArchitecture.trainSize = trainSize;
     }
 }

@@ -1,4 +1,4 @@
-package org.DistributedDL.examples.mnistCyclicLr;
+package org.DistributedDL.examples.mnist.mnistCyclicLr;
 
 import org.DistributedDL.StandardArchitectures.LeNet5Architecture;
 import org.DistributedDL.CyclicLr.lrRangeTestScheduleGenerator;
