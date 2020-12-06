@@ -8,6 +8,10 @@ public class lrRangeTestScheduleGenerator {
     private static double lrResolution = 0.0001d;
     private static double minLr = 0.0001d;
 
+    public static void setMinLr(double minLr) {
+        lrRangeTestScheduleGenerator.minLr = minLr;
+    }
+
     public static Map<Integer, Double> getSchedule(double maxLr, int trainSize, int batchSize,
                                                    int rangeTestEpochCount) {
 
@@ -28,7 +32,8 @@ public class lrRangeTestScheduleGenerator {
         double[] lrArray = new double[lrArrayLen];
 
         for (double lr = minLr; lr <= maxLr; lr = lr + lrResolution) {
-            lrArray[((int) (lr / lrResolution)) - 1] = lr;
+
+            lrArray[((int) ((lr - minLr) / lrResolution))] = lr;
         }
 
         return lrArray;
