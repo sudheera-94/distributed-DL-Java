@@ -28,13 +28,13 @@ public class Cifar10LrRangeTest {
         BasicConfigurator.configure();
 
         int batchSize = 100;
-        int numEpochs = 4;
+        int numEpochs = 8;
         int height = 32;
         int width = 32;
         int channels = 3;
         int outputNum = 10;
         int rngseed = 123;
-        int evaluationListenerFreq = 200;
+        int evaluationListenerFreq = 10;
 
         // Loading training data
         System.out.println("Data load and vectorization...");
@@ -105,6 +105,9 @@ public class Cifar10LrRangeTest {
         //Attach the StatsStorage instance to the UI: this allows the contents of the StatsStorage
         // to be visualized
         uiServer.attach(statsStorage);
+
+        System.setProperty("org.bytedeco.javacpp.maxphysicalbytes", "12G");
+        System.setProperty("org.bytedeco.javacpp.maxbytes", "8G");
 
         // Training the network
         for (int i = 0; i < numEpochs; i++) {
