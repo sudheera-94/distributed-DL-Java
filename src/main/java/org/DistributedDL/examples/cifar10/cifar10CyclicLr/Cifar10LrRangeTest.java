@@ -90,10 +90,20 @@ public class Cifar10LrRangeTest {
                 // Getting the accuracy of the listener
                 float accuracy = (float) truePositiveCount / (float) dataCount;
 
+                // Get the learning rate from getDefaultConfiguration
+                String defaultConfigString = ((MultiLayerNetwork) model).getDefaultConfiguration().toJson();
+                JSONObject defaultConfigJsonObj = new JSONObject(defaultConfigString);
+
+                JSONObject layerObject = defaultConfigJsonObj.getJSONObject("layer");
+                JSONObject convolutionObject = layerObject.getJSONObject("convolution");
+                JSONObject iUpdaterObject = convolutionObject.getJSONObject("iupdater");
+                Double learningRate = iUpdaterObject.getDouble("learningRate");
+
                 // Creating a JSON object with accuracy and the iteration
                 JSONObject EvaluativeListenerAccuracyObject = new JSONObject();
                 EvaluativeListenerAccuracyObject.put("iteration", invocationsCount * evaluationListenerFreq);
                 EvaluativeListenerAccuracyObject.put("accuracy", accuracy);
+                EvaluativeListenerAccuracyObject.put("learningRate", learningRate);
                 EvaluativeListenerAccuracyArray.put(EvaluativeListenerAccuracyObject);
             }
         };
