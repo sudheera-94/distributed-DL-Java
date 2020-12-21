@@ -79,6 +79,7 @@ public class MnistLrRangeTestTrainingConfig {
                 .learningRate(0.0001d)        // Learning rate
                 .biasLearningRate(0.0002d)
                 .updater(new Nesterovs(0.9d))
+                .regularization(true)
                 .l2(0.0005d)
 
                 .learningRateDecayPolicy(LearningRatePolicy.Schedule)

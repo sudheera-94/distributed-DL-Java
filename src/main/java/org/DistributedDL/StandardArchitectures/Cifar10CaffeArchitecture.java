@@ -30,7 +30,7 @@ public class Cifar10CaffeArchitecture extends BaseArchitecture {
                 .learningRate(0.001d)
                 .biasLearningRate(0.002d)
                 .updater(new Nesterovs(0.9d))
-                .l2(0.004d)
+                .regularization(true).l2(0.004d)
 
                 // learning rate policy
                 .learningRateDecayPolicy(LearningRatePolicy.None)
@@ -79,7 +79,7 @@ public class Cifar10CaffeArchitecture extends BaseArchitecture {
                         .nOut(getnClasses())
                         .activation(Activation.SOFTMAX)
                         .build())
-                .setInputType(InputType.convolutionalFlat(32, 32, 3))
+                .setInputType(InputType.convolutional(32, 32, 3))
                 .backprop(true).pretrain(false).build();
 
         return conf;

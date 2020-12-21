@@ -33,6 +33,7 @@ public class LeNet5Architecture extends BaseArchitecture {
                 .learningRate(0.01d)        // Learning rate
                 .biasLearningRate(0.02d)
                 .updater(new Nesterovs(0.9d))
+                .regularization(true)
                 .l2(0.0005d)
 
                 // The learning rate policy
