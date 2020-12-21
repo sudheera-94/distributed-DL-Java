@@ -29,8 +29,7 @@ public class Vgg16Architecture extends BaseArchitecture {
                 .learningRate(0.001d)
                 .biasLearningRate(0.002d)
                 .updater(new Nesterovs(0.9d))
-                .regularization(true)
-                .l2(0.004d)
+                .regularization(true).l2(0.004d)
 
                 .weightInit(WeightInit.XAVIER)
                 .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)

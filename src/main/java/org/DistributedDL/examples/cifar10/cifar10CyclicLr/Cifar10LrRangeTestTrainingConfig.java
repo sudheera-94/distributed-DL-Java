@@ -61,8 +61,7 @@ public class Cifar10LrRangeTestTrainingConfig {
 
                 // The base learning rate, momentum and the weight decay of the network.
                 .updater(new Nesterovs(0.9d))
-                .regularization(true)
-                .l2(0.004d)
+                .regularization(true).l2(0.004d)
 
                 .learningRateDecayPolicy(LearningRatePolicy.Schedule)
                 .learningRateSchedule(lrSchedule)
