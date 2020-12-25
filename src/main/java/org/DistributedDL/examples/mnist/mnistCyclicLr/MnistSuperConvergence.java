@@ -15,14 +15,14 @@ public class MnistSuperConvergence {
     public static void main(String[] args) throws Exception {
         BasicConfigurator.configure();
 
-        int batchSize = 64;
+        int batchSize = 512;
         int height = 28;
         int width = 28;
         int channels = 1;
         int outputNum = 10;
         int rngseed = 123;
 
-        int numEpochs = 4;
+        int numEpochs = 12;
 
         // Loading training data
         System.out.println("Data load and vectorization...");
