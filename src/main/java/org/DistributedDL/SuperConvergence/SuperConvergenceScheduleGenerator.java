@@ -70,7 +70,7 @@ public class SuperConvergenceScheduleGenerator {
 
         for (int i = 0; i < totalIterationsCount; i++) {
 
-            if ((count % iterCountPerStep) == 0) {
+            if ((count != 0) && ((count % iterCountPerStep) == 0)) {
                 count = 0;
                 memLr = startLr;
                 startLr = stopLr;
