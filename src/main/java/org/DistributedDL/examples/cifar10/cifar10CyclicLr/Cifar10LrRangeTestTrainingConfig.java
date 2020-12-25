@@ -1,7 +1,6 @@
 package org.DistributedDL.examples.cifar10.cifar10CyclicLr;
 
-import org.DistributedDL.CyclicLr.lrRangeTestScheduleGenerator;
-import org.DistributedDL.StandardArchitectures.Cifar10CaffeArchitecture;
+import org.DistributedDL.CyclicLr.LrRangeTestScheduleGenerator;
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
 import org.deeplearning4j.nn.conf.LearningRatePolicy;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
@@ -10,7 +9,6 @@ import org.deeplearning4j.nn.conf.inputs.InputType;
 import org.deeplearning4j.nn.conf.layers.*;
 import org.deeplearning4j.nn.weights.WeightInit;
 import org.nd4j.linalg.activations.Activation;
-import org.nd4j.linalg.activations.impl.ActivationReLU;
 import org.nd4j.linalg.learning.config.Nesterovs;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 
@@ -157,7 +155,7 @@ public class Cifar10LrRangeTestTrainingConfig {
 //        lrRangeTestScheduleGenerator.setMinLr(0.01d);
 
         Map<Integer, Double> lrScheduleNew =
-                lrRangeTestScheduleGenerator.getSchedule(this.maxLr, 50000,
+                LrRangeTestScheduleGenerator.getSchedule(this.maxLr, 50000,
                         this.batchSize, this.rangeTestEpochCount);
         this.lrSchedule = lrScheduleNew;
 

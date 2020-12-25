@@ -1,7 +1,6 @@
 package org.DistributedDL.examples.mnist.mnistCyclicLr;
 
-import org.DistributedDL.StandardArchitectures.LeNet5Architecture;
-import org.DistributedDL.CyclicLr.lrRangeTestScheduleGenerator;
+import org.DistributedDL.CyclicLr.LrRangeTestScheduleGenerator;
 
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
 import org.deeplearning4j.nn.conf.LearningRatePolicy;
@@ -130,7 +129,7 @@ public class MnistLrRangeTestTrainingConfig {
     private void setLrSchedule() {
 
         Map<Integer, Double> lrScheduleNew =
-                lrRangeTestScheduleGenerator.getSchedule(this.maxLr, 60000,
+                LrRangeTestScheduleGenerator.getSchedule(this.maxLr, 60000,
                         this.batchSize, this.rangeTestEpochCount);
         this.lrSchedule = lrScheduleNew;
 

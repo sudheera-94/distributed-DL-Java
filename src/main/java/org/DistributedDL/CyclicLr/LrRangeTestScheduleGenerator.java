@@ -8,7 +8,7 @@ import java.util.Map;
  * Provides a Map<Integer, Double> which has <iteration, learning rate>
  * to the expected RangeTestConfig class.
  */
-public class lrRangeTestScheduleGenerator {
+public class LrRangeTestScheduleGenerator {
 
     private static double lrResolution = 0.0001d;
     private static double minLr = 0.0001d;
@@ -19,7 +19,7 @@ public class lrRangeTestScheduleGenerator {
      * @param minLr minimum learning rate.
      */
     public static void setMinLr(double minLr) {
-        lrRangeTestScheduleGenerator.minLr = minLr;
+        LrRangeTestScheduleGenerator.minLr = minLr;
     }
 
     /**
