@@ -1,7 +1,6 @@
-package org.DistributedDL.examples.mnist.mnistCyclicLr;
+package org.DistributedDL.examples.mnist.mnistSuperConvergence;
 
-import org.DistributedDL.CyclicLr.LrRangeTestScheduleGenerator;
-
+import org.DistributedDL.SuperConvergence.SuperConvergenceScheduleGenerator;
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
 import org.deeplearning4j.nn.conf.LearningRatePolicy;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
@@ -18,52 +17,26 @@ import org.nd4j.linalg.lossfunctions.LossFunctions;
 
 import java.util.Map;
 
-public class MnistLrRangeTestTrainingConfig {
+public class MnistSuperConvergenceConfig {
 
-    private int rangeTestEpochCount = 4;
-    private double maxLr = 0.02;
-    private int batchSize = 64;
+    private int superConvergenceEpochCount = 12;
+    private int batchSize = 512;
     private Map<Integer, Double> lrSchedule;
-
-    public Map<Integer, Double> getLrSchedule() {
-        return lrSchedule;
-    }
-
-    public int getRangeTestEpochCount() {
-        return rangeTestEpochCount;
-    }
-
-    public void setRangeTestEpochCount(int rangeTestEpochCount) {
-        this.rangeTestEpochCount = rangeTestEpochCount;
-    }
+    private static double minLr = 0.01d;
+    private static double maxLr = 0.1d;
+    private static int trainSize = 60000;
+    private static int stepSize = 5;
 
     // Constructors
 
-    public MnistLrRangeTestTrainingConfig(int batchSize, int rangeTestEpochCount) {
+    public MnistSuperConvergenceConfig(int batchSize, int superConvergenceEpochCount) {
         this.batchSize = batchSize;
-        this.rangeTestEpochCount = rangeTestEpochCount;
+        this.superConvergenceEpochCount = superConvergenceEpochCount;
     }
 
-    public MnistLrRangeTestTrainingConfig(int batchSize, int rangeTestEpochCount, double maxLr) {
-        this(batchSize, rangeTestEpochCount);
-        this.maxLr = maxLr;
-    }
+    // Other methods
 
-    // Other Methods
     public MultiLayerConfiguration getArchitecture() {
-
-        // Getting the default architecture
-//        LeNet5Architecture leNet5 = new LeNet5Architecture();
-//        MultiLayerConfiguration conf = leNet5.getArchitecture();
-
-        // Doing Modifications
-//        List<NeuralNetConfiguration> confList = new ArrayList<NeuralNetConfiguration>();
-//        NeuralNetConfiguration confItem = new NeuralNetConfiguration();
-//        confItem.setLearningRateByParam("newLr", 0.03d);
-//        confList.add(confItem);
-
-        // Passing the new configuration
-//        conf.setConfs(confList);
 
         int iterations = 1; // Number of training iterations
         int nChannels = 1; // Number of input channels
@@ -123,16 +96,14 @@ public class MnistLrRangeTestTrainingConfig {
                 .backprop(true).pretrain(false).build();
 
         return conf;
-
     }
 
     private void setLrSchedule() {
 
         Map<Integer, Double> lrScheduleNew =
-                LrRangeTestScheduleGenerator.getSchedule(this.maxLr, 60000,
-                        this.batchSize, this.rangeTestEpochCount);
+                SuperConvergenceScheduleGenerator.getSchedule(this.maxLr, this.minLr, this.superConvergenceEpochCount,
+                        this.trainSize, this.batchSize, this.stepSize);
         this.lrSchedule = lrScheduleNew;
 
     }
-
 }

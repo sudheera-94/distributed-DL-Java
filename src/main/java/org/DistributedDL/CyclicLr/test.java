@@ -37,7 +37,7 @@ public class test {
 //            i = i+1;
 //        }
 
-        System.out.println(60000/512);
+
     }
 
 }

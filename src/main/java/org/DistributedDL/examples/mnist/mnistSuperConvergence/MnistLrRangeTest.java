@@ -1,4 +1,4 @@
-package org.DistributedDL.examples.mnist.mnistCyclicLr;
+package org.DistributedDL.examples.mnist.mnistSuperConvergence;
 
 import org.apache.log4j.BasicConfigurator;
 import org.deeplearning4j.api.storage.StatsStorage;

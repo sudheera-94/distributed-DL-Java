@@ -1,9 +1,15 @@
-package org.DistributedDL.examples.mnist.mnistCyclicLr;
+package org.DistributedDL.examples.mnist.mnistSuperConvergence;
 
 import org.apache.log4j.BasicConfigurator;
 import org.deeplearning4j.api.storage.StatsStorage;
+import org.deeplearning4j.eval.Evaluation;
+import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
+import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.ui.api.UIServer;
+import org.deeplearning4j.ui.stats.StatsListener;
 import org.deeplearning4j.ui.storage.InMemoryStatsStorage;
+import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.dataset.DataSet;
 import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
 import org.nd4j.linalg.dataset.api.preprocessor.DataNormalization;
 import org.nd4j.linalg.dataset.api.preprocessor.ImagePreProcessingScaler;
@@ -49,5 +55,43 @@ public class MnistSuperConvergence {
         //Then add the StatsListener to collect this information from the network, as it trains
         StatsStorage statsStorage = new InMemoryStatsStorage();   //Alternative: new FileStatsStorage(File) - see UIStorageExample
         int listenerFrequency = 1;
+
+        // Network configuration
+        MnistSuperConvergenceConfig leNetSuperConvergenceConfig =
+                new MnistSuperConvergenceConfig(batchSize, numEpochs);
+        MultiLayerConfiguration conf = leNetSuperConvergenceConfig.getArchitecture();
+
+        MultiLayerNetwork model = new MultiLayerNetwork(conf);
+        model.init();
+
+        model.setListeners(new StatsListener(statsStorage, listenerFrequency));
+
+        //Attach the StatsStorage instance to the UI: this allows the contents of the StatsStorage
+        // to be visualized
+        uiServer.attach(statsStorage);
+
+        // Training the network
+        for (int i = 0; i < numEpochs; i++) {
+            model.fit(trainIter);
+            System.out.println("*** Completed epoch " + i + " ***");
+        }
+
+        System.out.println("******EVALUATE MODEL******");
+
+        // Create Eval object with 10 possible classes
+        Evaluation eval = new Evaluation(outputNum);
+        iterTest.reset();
+
+        // Evaluate the network
+        while (iterTest.hasNext()) {
+            DataSet next = iterTest.next();
+            INDArray output = model.output(next.getFeatureMatrix());
+            // Compare the Feature Matrix from the model
+            // with the labels from the RecordReader
+            eval.eval(next.getLabels(), output);
+        }
+
+        System.out.println(eval.stats());
+        System.out.println(eval.confusionToString());
     }
 }
