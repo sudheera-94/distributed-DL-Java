@@ -26,8 +26,8 @@ public class MnistLocal {
     public static void main(String[] args) throws Exception {
         BasicConfigurator.configure();
 
-        int batchSize = 64;
-        int numEpochs = 1;
+        int batchSize = 512;
+        int numEpochs = 12;
         int height = 28;
         int width = 28;
         int channels = 1;

@@ -30,8 +30,8 @@ public class LeNet5Architecture extends BaseArchitecture {
                 .iterations(getIterations())     // Training iterations per minibatch
 
                 // The base learning rate, momentum and the weight decay of the network.
-                .learningRate(0.01d)        // Learning rate
-                .biasLearningRate(0.02d)
+                .learningRate(0.1d)        // Learning rate
+                .biasLearningRate(0.2d)
                 .updater(new Nesterovs(0.9d))
                 .regularization(true)
                 .l2(0.0005d)
