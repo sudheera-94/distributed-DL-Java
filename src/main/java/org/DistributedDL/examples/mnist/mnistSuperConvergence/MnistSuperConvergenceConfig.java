@@ -34,6 +34,11 @@ public class MnistSuperConvergenceConfig {
         this.superConvergenceEpochCount = superConvergenceEpochCount;
     }
 
+    public MnistSuperConvergenceConfig(int batchSize, int superConvergenceEpochCount, int trainSize) {
+        this(batchSize, superConvergenceEpochCount);
+        this.trainSize = trainSize;
+    }
+
     // Other methods
 
     public MultiLayerConfiguration getArchitecture() {
