@@ -49,7 +49,7 @@ public class MnistSuperConvergenceSpark {
     private int avgFreq = 10;
 
     @Parameter(names = "-numWorkers", description = "Number of workers in the cluster")
-    private int numWorkers = 1;
+    private int numWorkers = 2;
 
     public static void main(String[] args) throws Exception {
         BasicConfigurator.configure(); // To configure logging
@@ -80,7 +80,7 @@ public class MnistSuperConvergenceSpark {
         // Configuring JavaSparkContext
         SparkConf sparkConf = new SparkConf();
         if (useSparkLocal) {
-            sparkConf.setMaster("local[" + numWorkers +"]");
+            sparkConf.setMaster("local[*]");
         }
         sparkConf.setAppName("DL4J Spark Mnist Super Convergence Example");
         JavaSparkContext sc = new JavaSparkContext(sparkConf);

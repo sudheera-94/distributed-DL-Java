@@ -6,14 +6,16 @@ to build a jar :-
     If Java - mvn package -DskipTests
 
 to run the jar locally :-
+    source ~/.bashrc
     start-master.sh
     start-slave.sh spark://CampNou:7077
 
     cd /home/sudheera/Documents/MSc/final_project/distributed_dl/target
 
-    spark-submit --class org.DistributedDL.examples.mnistTraditional.MnistSpark --master spark://CampNou:7077 --num-executors 2 --executor-memory 1g \
+    spark-submit --class org.DistributedDL.examples.mnist.mnistSuperConvergence.MnistSuperConvergenceSpark \
+    --master spark://CampNou:7077 --num-executors 2 --executor-memory 1g --total-executor-cores 1 \
     --conf spark.driver.memoryOverhead=1g --conf spark.executor.memoryOverhead=1g \
-    --driver-memory 4g distributed_dl-1.0-SNAPSHOT-bin.jar
+    --driver-memory 4g target/distributed_dl-1.0-SNAPSHOT-bin.jar  -useSparkLocal false
 
     stop-slave.sh spark://CampNou:7077
     stop-master.sh
